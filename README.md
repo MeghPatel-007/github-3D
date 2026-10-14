@@ -1,4 +1,4 @@
-# IWSDK App
+# GitHub 3D
 
 This project uses `iwsdk.config.json` for declarative scene, asset, component,
 XR, and emulator configuration. Application systems remain explicit in

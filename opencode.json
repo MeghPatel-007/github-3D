@@ -4,7 +4,7 @@
       "type": "local",
       "command": [
         "node",
-        "C:\\Users\\meghp\\Desktop\\iwsdk testing\\immersive-web-app\\Immersive-web-app\\node_modules\\@iwsdk\\cli\\dist\\cli.js",
+        "C:\\Users\\meghp\\Desktop\\Coding\\Projects\\github-3D\\node_modules\\@iwsdk\\cli\\dist\\cli.js",
         "mcp",
         "stdio"
       ],
@@ -14,7 +14,7 @@
       "type": "local",
       "command": [
         "node",
-        "C:\\Users\\meghp\\Desktop\\iwsdk testing\\immersive-web-app\\Immersive-web-app\\node_modules\\@iwsdk\\reference\\dist\\cli.js"
+        "C:\\Users\\meghp\\Desktop\\Coding\\Projects\\github-3D\\node_modules\\@iwsdk\\reference\\dist\\cli.js"
       ],
       "enabled": true
     },
@@ -22,7 +22,7 @@
       "type": "local",
       "command": [
         "node",
-        "C:\\Users\\meghp\\Desktop\\iwsdk testing\\immersive-web-app\\Immersive-web-app\\node_modules\\@meta-quest\\metavr\\bin.js",
+        "C:\\Users\\meghp\\Desktop\\Coding\\Projects\\github-3D\\node_modules\\@meta-quest\\metavr\\bin.js",
         "mcp",
         "server"
       ],
