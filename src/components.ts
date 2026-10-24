@@ -5,7 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { defineComponents } from '@iwsdk/core';
-import { Robot } from './robot-component.js';
+import { createComponent, defineComponents, Types } from '@iwsdk/core';
 
-export default defineComponents([Robot]);
+export const RepoKind = { Directory: 'Directory', File: 'File' } as const;
+
+/** Metadata for one repository tree node (docs FR-MODEL-03/04/07). */
+export const RepoNode = createComponent('RepoNode', {
+  path: { type: Types.String, default: '' },
+  kind: { type: Types.Enum, default: RepoKind.File, enum: RepoKind },
+  size: { type: Types.Float64, default: 0 },
+});
+
+export default defineComponents([RepoNode]);

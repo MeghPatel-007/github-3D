@@ -1,0 +1,79 @@
+<!--
+  Minimal GitHub 3D workspace HUD: repo header, 2D tree fallback (FR-3D-10),
+  and inspector (FR-INSPECT-01/02). Row ids (item-<n>, n = normalized-entry
+  index) get their text and selection styling from RepoExplorerSystem at
+  runtime. ScreenSpace placement; authored text is placeholder, runtime sets it.
+-->
+<style>
+  .frame {
+    background-color: #0d1117;
+    border-color: #2a3646;
+    border-width: 1;
+    border-radius: 8;
+    padding-top: 10;
+    padding-right: 12;
+    padding-bottom: 10;
+    padding-left: 12;
+    display: flex;
+    flex-direction: column;
+    gap: 6;
+  }
+  #title { font-size: 16px; font-weight: bold; color: #e6edf3; }
+  .list { display: flex; flex-direction: column; gap: 4px; }
+  .row {
+    padding-top: 4px;
+    padding-right: 8px;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    border-color: transparent;
+    border-width: 1px;
+    border-radius: 4px;
+    color: #cfd8e3;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #insp-body { display: none; flex-direction: column; gap: 2px; }
+  #insp-frame {
+    border-color: #2a3646;
+    border-width: 1px;
+    border-radius: 6px;
+    padding-top: 6px;
+    padding-right: 8px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  #insp-empty { color: #7d8590; font-size: 11px; }
+  #insp-header { color: #e6edf3; font-size: 13px; font-weight: bold; }
+  #insp-kind { color: #8b949e; font-size: 11px; }
+  #insp-size { color: #8b949e; font-size: 11px; }
+  #insp-hint { color: #58a6ff; font-size: 10px; }
+  #insp-source { color: #cfd8e3; font-size: 9px; }
+  #insp-deps { color: #8b949e; font-size: 9px; }
+</style>
+<div class="frame">
+  <div id="title">Repository</div>
+  <div class="list">
+    <div id="item-0" class="row">item-0</div>
+    <div id="item-1" class="row">item-1</div>
+    <div id="item-2" class="row">item-2</div>
+    <div id="item-3" class="row">item-3</div>
+    <div id="item-4" class="row">item-4</div>
+    <div id="item-5" class="row">item-5</div>
+    <div id="item-6" class="row">item-6</div>
+    <div id="item-7" class="row">item-7</div>
+  </div>
+  <div id="insp-frame">
+    <div id="insp-empty">Select a file or folder.</div>
+    <div id="insp-body" style="display: none">
+      <div id="insp-header">path</div>
+      <div id="insp-kind">kind</div>
+      <div id="insp-size">size</div>
+      <div id="insp-hint">revision</div>
+      <div id="insp-source">Source loads when a file is selected.</div>
+      <div id="insp-deps">No imports selected.</div>
+    </div>
+  </div>
+</div>
