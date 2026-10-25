@@ -209,7 +209,7 @@ export class RepoExplorerSystem extends createSystem({
     const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
     if (!panel) return;
     const title = panel.getElementById('title');
-    title?.setProperties({ text: `${this.model.name} @ ${this.model.commitSha.slice(0, 7)}` });
+    title?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${this.model.ref ?? this.model.defaultBranch} @ ${this.model.commitSha.slice(0, 7)}` });
     this.inspectorBody = panel.getElementById('insp-body')!;
     this.inspectorHeader = panel.getElementById('insp-header')!;
     this.inspectorKind = panel.getElementById('insp-kind')!;
@@ -299,7 +299,7 @@ export class RepoExplorerSystem extends createSystem({
       });
     });
     const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
-    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} @ ${this.model.commitSha.slice(0, 7)}` });
+    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${this.model.ref ?? this.model.defaultBranch} @ ${this.model.commitSha.slice(0, 7)}` });
   }
 
   private loadSource(path: string, commitSha: string): void {

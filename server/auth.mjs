@@ -205,10 +205,10 @@ export function createAuthService(env = process.env, requestFetch = fetch) {
     return stored.accessToken;
   }
 
-  async function listRepositories(session, cursor) {
+  async function listRepositories(session, cursor, query = '') {
     const page = cursor === undefined ? 1 : Number(cursor);
-    if (!Number.isInteger(page) || page < 1 || page > 100) {
-      const error = new Error('Invalid repository-list cursor.');
+    if (!Number.isInteger(page) || page < 1 || page > 100 || typeof query !== 'string' || query.length > 100) {
+      const error = new Error('Invalid repository-list query.');
       error.status = 400;
       throw error;
     }
@@ -230,14 +230,16 @@ export function createAuthService(env = process.env, requestFetch = fetch) {
       throw error;
     }
     if (!upstream.ok) {
-      const error = new Error(upstream.status === 403 ? 'GitHub repository access was denied.' : 'Could not list GitHub repositories.');
-      error.status = upstream.status === 403 ? 403 : 502;
+      const rateLimited = upstream.status === 403 && upstream.headers.get('x-ratelimit-remaining') === '0';
+      const error = new Error(rateLimited ? 'GitHub rate limit reached. Retry later.' : upstream.status === 403 ? 'GitHub repository access was denied.' : 'Could not list GitHub repositories.');
+      error.status = rateLimited ? 429 : upstream.status === 403 ? 403 : 502;
+      error.retryAfter = upstream.headers.get('retry-after');
       throw error;
     }
     const repositories = await upstream.json();
     if (!Array.isArray(repositories)) throw new Error('GitHub returned an invalid repository list.');
-    return {
-      items: repositories.map((repository) => ({
+    const normalizedQuery = query.trim().toLowerCase();
+    const items = repositories.map((repository) => ({
         id: String(repository.id),
         owner: repository.owner.login,
         name: repository.name,
@@ -245,7 +247,9 @@ export function createAuthService(env = process.env, requestFetch = fetch) {
         defaultBranch: repository.default_branch,
         private: Boolean(repository.private),
         updatedAt: repository.updated_at,
-      })),
+      })).filter((repository) => !normalizedQuery || `${repository.owner}/${repository.name}`.toLowerCase().includes(normalizedQuery));
+    return {
+      items,
       nextCursor: repositories.length === 100 && page < 100 ? String(page + 1) : null,
     };
   }

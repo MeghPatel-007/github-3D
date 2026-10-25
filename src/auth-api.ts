@@ -50,8 +50,11 @@ export async function getAuthConfig(): Promise<{ configured: boolean; installUrl
   return result;
 }
 
-export async function listRepositories(cursor?: string): Promise<{ items: AccessibleRepository[]; nextCursor: string | null }> {
-  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+export async function listRepositories(cursor?: string, search = ''): Promise<{ items: AccessibleRepository[]; nextCursor: string | null }> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  if (search.trim()) params.set('q', search.trim());
+  const query = params.toString() ? `?${params.toString()}` : '';
   const response = await fetch(`/api/v1/repositories${query}`, { credentials: 'same-origin', cache: 'no-store' });
   const value: unknown = await response.json().catch(() => null);
   const body = value != null && typeof value === 'object' ? value as { items?: AccessibleRepository[]; nextCursor?: string | null; error?: { message?: string } } : {};

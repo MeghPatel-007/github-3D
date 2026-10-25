@@ -3,8 +3,8 @@
 `Current Status`
 =================
 **Last Updated:** 2026-10-25
-**Tasks Completed:** 1
-**Current Task:** TASK-1 Complete
+**Tasks Completed:** 4
+**Current Task:** TASK-4 Complete
 
 ----------------------------------------------
 
@@ -36,3 +36,12 @@
 - `bun run test` blocked by the existing `ralph-capture` failure and Node `.ts` loading failures (14 passed, 3 failed).
 - `bun run typecheck` blocked by existing missing Playwright, Vitest, and Node type dependencies.
 - `bun run build` blocked by the existing missing Rollup native optional dependency.
+
+## TASK-4 — Add authenticated repository discovery and selection
+
+- Added authorized repository search with bounded query length and cursor pagination.
+- Added retry, empty, loading, inaccessible, and rate-limit handling for repository discovery.
+- Kept repository selection server-authorized and revision-pinned; surfaced owner, branch, and commit in the 2D and 3D views.
+- Added auth coverage for filtered authorized results and invalid search bounds.
+- Focused checks: `bun test tests/auth.test.mjs tests/github-api.test.mjs` passed (13 tests); targeted TypeScript checks passed.
+- Full `bun run typecheck`, `bun run build`, and `bun run test` remain blocked by missing workspace dependencies and pre-existing test-runner failures.

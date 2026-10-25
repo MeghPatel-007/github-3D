@@ -156,3 +156,28 @@ test('failed token refresh invalidates the session and requires sign-in again', 
   await assert.rejects(auth.listRepositories(session), { status: 401, message: 'GitHub session expired. Sign in again.' });
   assert.equal(auth.sessionFor(request), null);
 });
+
+test('repository listing filters authorized results and keeps bounded pagination', async () => {
+  const requests = [];
+  const auth = createAuthService(env, async (url, init) => {
+    requests.push({ url: String(url), init });
+    if (requests.length === 1) return Response.json({ access_token: 'access', refresh_token: 'refresh', expires_in: 3600 });
+    if (requests.length === 2) return Response.json({ login: 'octocat' });
+    return Response.json([
+      { id: 1, owner: { login: 'octocat' }, name: 'wanted', full_name: 'octocat/wanted', default_branch: 'main', private: false },
+      { id: 2, owner: { login: 'octocat' }, name: 'other', full_name: 'octocat/other', default_branch: 'main', private: false },
+    ]);
+  });
+  const started = responseRecorder();
+  const authorizeUrl = await auth.start(started);
+  const state = authorizeUrl.searchParams.get('state');
+  const callback = responseRecorder();
+  await auth.callback({ headers: { cookie: `gh3d_oauth_state=${state}` } }, callback, new URL(`https://localhost:8081/auth/github/callback?state=${state}&code=abc`));
+  const sessionId = callback.headers.get('Set-Cookie').find((value) => value.startsWith('gh3d_session=')).match(/^gh3d_session=([^;]+)/u)[1];
+  const session = auth.sessionFor({ headers: { cookie: `gh3d_session=${sessionId}` } });
+  const result = await auth.listRepositories(session, undefined, 'wanted');
+  assert.deepEqual(result.items.map((repository) => repository.fullName), ['octocat/wanted']);
+  assert.equal(result.nextCursor, null);
+  await assert.rejects(auth.listRepositories(session, undefined, 'x'.repeat(101)), { status: 400 });
+  assert.equal(requests[2].url.includes('user/repos'), true);
+});

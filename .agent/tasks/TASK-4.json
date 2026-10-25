@@ -10,9 +10,9 @@
     "The active selection is consistent across the dashboard, 2D tree, inspector, and 3D world."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Trace the existing repository chooser and API", "details": "Preserve current component and data conventions; read repository and API contracts." },
-    { "step": 2, "pass": false, "description": "Implement authorized discovery and selection", "details": "Keep server-side authorization checks and revision identity." },
-    { "step": 3, "pass": false, "description": "Verify selection and failure states", "details": "Add focused tests for search, pagination, and access errors; run required checks." }
+    { "step": 1, "pass": true, "description": "Trace the existing repository chooser and API", "details": "Preserve current component and data conventions; read repository and API contracts." },
+    { "step": 2, "pass": true, "description": "Implement authorized discovery and selection", "details": "Keep server-side authorization checks and revision identity." },
+    { "step": 3, "pass": true, "description": "Verify selection and failure states", "details": "Add focused tests for search, pagination, and access errors; run required checks." }
   ],
   "dependencies": ["TASK-3"],
   "estimatedComplexity": "medium",

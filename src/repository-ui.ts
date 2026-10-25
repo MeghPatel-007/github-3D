@@ -13,7 +13,7 @@ export function mountRepositoryUi(): void {
         <input id="repo-url" type="url" placeholder="https://github.com/owner/repository" autocomplete="url" required>
         <button id="repo-submit" type="submit" disabled>Import public repo</button>
       </form>
-      <div class="repo-auth"><span id="auth-user">Checking sign-in…</span><select id="repo-picker" aria-label="Accessible repositories" hidden><option value="">Your repositories…</option></select><a id="github-install" href="#" target="_blank" rel="noopener noreferrer" hidden>Install app for private repos</a><button id="github-signin" type="button" disabled>Continue with GitHub</button><button id="github-signout" type="button" hidden>Sign out</button><button id="repo-more" type="button" hidden>More</button></div>
+      <div class="repo-auth"><span id="auth-user">Checking sign-in…</span><input id="repo-auth-search" type="search" placeholder="Search your repositories…" aria-label="Search accessible repositories" hidden><select id="repo-picker" aria-label="Accessible repositories" hidden><option value="">Your repositories…</option></select><a id="github-install" href="#" target="_blank" rel="noopener noreferrer" hidden>Install app for private repos</a><button id="github-signin" type="button" disabled>Continue with GitHub</button><button id="github-signout" type="button" hidden>Sign out</button><button id="repo-more" type="button" hidden>More</button><button id="repo-retry" type="button" hidden>Retry repository search</button></div>
       <div id="repo-status" class="repo-status" role="status" aria-live="polite">Loading demo repository…</div>
     </header>
     <aside class="repo-browser" aria-label="Repository file browser">
@@ -35,12 +35,15 @@ export function mountRepositoryUi(): void {
   const signOutButton = root.querySelector<HTMLButtonElement>('#github-signout')!;
   const installLink = root.querySelector<HTMLAnchorElement>('#github-install')!;
   const repoPicker = root.querySelector<HTMLSelectElement>('#repo-picker')!;
+  const repoAuthSearch = root.querySelector<HTMLInputElement>('#repo-auth-search')!;
   const moreRepos = root.querySelector<HTMLButtonElement>('#repo-more')!;
+  const retryRepos = root.querySelector<HTMLButtonElement>('#repo-retry')!;
   let fixture: RepoFixture = tinyTsFixture;
   let entries = buildRepoModel(fixture).entries;
   let selectedPath = 'src/index.ts';
   let accessibleRepos: AccessibleRepository[] = [];
   let nextCursor: string | null = null;
+  let repositorySearchRequest = 0;
 
   const setStatus = (text: string, error = false) => {
     status.textContent = text;
@@ -96,7 +99,7 @@ export function mountRepositoryUi(): void {
     selectedPath = '';
     window.dispatchEvent(new CustomEvent('repo:load', { detail: fixture }));
     root.querySelector('#repo-name')!.textContent = `${fixture.owner}/${fixture.name}`;
-    root.querySelector('#repo-revision')!.textContent = `${fixture.ref} · ${fixture.commitSha}`;
+    root.querySelector('#repo-revision')!.textContent = `${fixture.ref ?? fixture.defaultBranch} · revision ${fixture.commitSha}`;
     drawList();
     const sceneNotice = imported.entries.length > 500 ? ' World view is limited to 500 nodes.' : '';
     const incompleteNotice = imported.truncated ? ' GitHub marked the tree truncated.' : '';
@@ -118,7 +121,9 @@ export function mountRepositoryUi(): void {
     signIn.hidden = false;
     signOutButton.hidden = true;
     repoPicker.hidden = true;
+    repoAuthSearch.hidden = true;
     moreRepos.hidden = true;
+    retryRepos.hidden = true;
     authUser.textContent = 'GitHub session expired. Sign in again.';
     accessibleRepos = [];
     repoPicker.replaceChildren(new Option('Your repositories…', ''));
@@ -130,7 +135,34 @@ export function mountRepositoryUi(): void {
       showSignedOut();
     }
     setStatus(error instanceof Error ? error.message : 'Could not load GitHub repositories.', true);
+    retryRepos.hidden = false;
   };
+
+  const loadRepositoryPage = async (cursor?: string, replace = false): Promise<number> => {
+    const page = await listRepositories(cursor, repoAuthSearch.value);
+    if (replace) {
+      accessibleRepos = [];
+      repoPicker.replaceChildren(new Option('Your repositories…', ''));
+    }
+    addRepositoryOptions(page.items);
+    nextCursor = page.nextCursor;
+    moreRepos.hidden = !nextCursor;
+    retryRepos.hidden = true;
+    if (!page.items.length && replace) setStatus('No accessible repositories match that search.');
+    else if (replace) setStatus(`Found ${page.items.length} accessible repositories.`);
+    return page.items.length;
+  };
+
+  retryRepos.addEventListener('click', async () => {
+    retryRepos.disabled = true;
+    try {
+      await loadRepositoryPage(undefined, true);
+    } catch (error) {
+      handleRepositoryListError(error);
+    } finally {
+      retryRepos.disabled = false;
+    }
+  });
 
   search.addEventListener('input', drawList);
   window.addEventListener('repo:system-ready', () => {
@@ -160,14 +192,36 @@ export function mountRepositoryUi(): void {
     if (!nextCursor) return;
     moreRepos.disabled = true;
     try {
-      const page = await listRepositories(nextCursor);
-      addRepositoryOptions(page.items);
-      nextCursor = page.nextCursor;
-      moreRepos.hidden = !nextCursor;
+      await loadRepositoryPage(nextCursor);
     } catch (error) {
       handleRepositoryListError(error);
     } finally {
       moreRepos.disabled = false;
+    }
+  });
+  repoAuthSearch.addEventListener('input', async () => {
+    const requestId = ++repositorySearchRequest;
+    repoPicker.disabled = true;
+    moreRepos.disabled = true;
+    accessibleRepos = [];
+    repoPicker.replaceChildren(new Option('Searching repositories…', ''));
+    setStatus('Searching authorized repositories…');
+    try {
+      const page = await listRepositories(undefined, repoAuthSearch.value);
+      if (requestId !== repositorySearchRequest) return;
+      addRepositoryOptions(page.items);
+      nextCursor = page.nextCursor;
+      moreRepos.hidden = !nextCursor;
+      retryRepos.hidden = true;
+      if (!page.items.length) setStatus('No accessible repositories match that search.');
+      else setStatus(`Found ${page.items.length} accessible repositories.`);
+    } catch (error) {
+      if (requestId === repositorySearchRequest) handleRepositoryListError(error);
+    } finally {
+      if (requestId === repositorySearchRequest) {
+        repoPicker.disabled = false;
+        moreRepos.disabled = false;
+      }
     }
   });
   repoPicker.addEventListener('change', async () => {
@@ -195,12 +249,10 @@ export function mountRepositoryUi(): void {
       : config.configured ? 'Not signed in' : 'GitHub sign-in not configured';
     if (!session.authenticated) return;
     repoPicker.hidden = false;
+    repoAuthSearch.hidden = false;
     try {
-      const page = await listRepositories();
-      addRepositoryOptions(page.items);
-      nextCursor = page.nextCursor;
-      moreRepos.hidden = !nextCursor;
-      if (!page.items.length) authUser.textContent = `Signed in as ${session.user?.login}; no accessible repositories`;
+      const repositoryCount = await loadRepositoryPage(undefined, true);
+      if (!repositoryCount) authUser.textContent = `Signed in as ${session.user?.login}; no accessible repositories`;
     } catch (error) {
       handleRepositoryListError(error);
     }
@@ -227,7 +279,7 @@ export function mountRepositoryUi(): void {
       applyImportedRepository(imported);
     } catch (error) {
       if (error instanceof RepositoryApiError && error.status === 401) showSignedOut();
-      setStatus(error instanceof RepositoryApiError ? error.message : 'Import failed. Start API with npm run api, then retry.', true);
+      setStatus(error instanceof RepositoryApiError ? error.message : 'Import failed. Start API with bun run api, then retry.', true);
     } finally {
       submit.disabled = false;
     }

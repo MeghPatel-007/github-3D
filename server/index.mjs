@@ -109,7 +109,7 @@ export function createApiServer() {
           error.status = 401;
           throw error;
         }
-        result = await auth.listRepositories(session, url.searchParams.get('cursor') ?? undefined);
+        result = await auth.listRepositories(session, url.searchParams.get('cursor') ?? undefined, url.searchParams.get('q') ?? '');
       } else if (request.method === 'POST' && url.pathname === '/api/v1/repositories/import') {
         route = 'POST /api/v1/repositories/import';
         if (auth.sessionFor(request)) assertSameOrigin(request);
