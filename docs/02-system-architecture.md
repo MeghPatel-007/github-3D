@@ -25,6 +25,9 @@ flowchart TD
     Dashboard --> Backend[Node.js API / Auth Service]
     Explorer --> Backend
     Backend --> GitHub[GitHub REST API]
+    Backend --> Workspace[Workspace Service]
+    Workspace --> GitEngine[Isolated Git Engine]
+    Workspace --> WorkspaceStore[Durable Workspace Storage]
 
     GitHub --> RepoService[Repository Service]
     RepoService --> TreeParser[Tree Parser and Normalizer]
@@ -50,6 +53,16 @@ flowchart TD
 - GitHub OAuth / GitHub App integration, chosen after permission requirements are finalized
 - Server-side session storage; use an appropriate persistent store only if deployment requires it
 - Input validation and structured logging with secret redaction
+
+### Git workspace execution and storage
+
+The approved model is a **server-managed Git workspace**. The backend creates one isolated workspace per user and repository, and a workspace worker runs a pinned native Git engine against that workspace. The worker is reachable only through typed, authorization-checked backend operations. Workspace metadata, Git objects, the index, and the working tree are durable server-side data; the browser receives status, diffs, and operation results, not a filesystem handle.
+
+This is the first release boundary for clone, branch, diff, stage, commit, fetch, pull, push, and conflict recovery. GitHub remains the remote source of truth, while the workspace is the source of truth for local changes until they are pushed. The renderer and 3D scene remain presentation layers over this state.
+
+Browser-local Git/workspace storage was considered because it can reduce server custody and support offline work. It is not selected: browser storage is origin-scoped, browser support for native directory access varies, storage can be evicted, and Quest/WebXR deployments cannot assume access to a user's desktop filesystem. A hybrid browser/server workspace was also rejected for the first release because it duplicates the index and object database and creates difficult conflict, recovery, and synchronization semantics.
+
+The server-managed model requires network access and server capacity, and it does not provide arbitrary local filesystem access or offline commits. Those are explicit limitations, not simulated capabilities. A future native companion could provide local workspaces without changing the web API contract.
 
 ### Optional later services
 - Durable database for cross-device recents and user preferences
@@ -97,14 +110,14 @@ Retrieves commits and changes, builds revision-specific models, and computes str
 4. Backend validates state, exchanges the code, and creates a secure session.
 5. Frontend loads repository dashboard data through the backend.
 6. User selects a repository and target branch/revision.
-7. Repository service resolves the commit SHA.
-8. Repository service fetches the Git tree for that SHA.
-9. Parser normalizes nodes and paths.
-10. Analyzer processes supported source files as needed.
-11. Layout engine computes spatial positions.
-12. Scene renders visible objects and edges.
-13. Inspector fetches selected file content for the same revision.
-14. All data requests remain scoped to the same revision until the user explicitly changes it.
+7. Repository service resolves the commit SHA, or Workspace Service opens/clones a managed workspace.
+8. Workspace Service executes Git operations in the isolated workspace and reports actual branch, HEAD, index, working-tree, and remote state.
+9. Repository service fetches the tree for the selected revision or workspace state.
+10. Parser normalizes nodes and paths.
+11. Analyzer processes supported source files as needed.
+12. Layout engine computes spatial positions.
+13. Scene and 2D views render the same revision and workspace state.
+14. All requests are authorization-checked and stale workspace/revision responses are ignored.
 
 ## 6. Suggested API surface
 
@@ -121,6 +134,8 @@ These are application API contracts, not GitHub endpoints. Exact payloads should
 - `GET /api/repositories/:owner/:repo/content?path=...&ref=...` — content for a specific path and revision.
 - `GET /api/repositories/:owner/:repo/commits?ref=...` — history endpoint for a later delivery phase.
 - `GET /api/repositories/:owner/:repo/analysis?ref=...` — optional cached analysis endpoint if needed.
+
+Workspace operations use a separate `/api/v1/workspaces` contract documented in `19-api-contracts.md`. They never expose Git credentials, filesystem paths, or arbitrary command execution to the browser.
 
 Protected endpoints must derive authorization from the server-side session and verify access to the requested repository. Never trust a client-provided owner/repository pair as proof of authorization.
 
@@ -139,6 +154,8 @@ Separate frontend and backend origins only if necessary; if they differ, configu
 - WebGL failure: offer the 2D tree and inspector.
 - History unavailable: keep current revision usable.
 - Session expired: preserve safe navigation state and ask the user to re-authenticate.
+- Workspace worker unavailable: preserve the last confirmed state, mark local operations unavailable, and offer retry or safe workspace close.
+- Workspace operation interrupted: report the confirmed Git state only; never infer a commit, push, or discard succeeded from a request timeout.
 
 ## 9. Observability
 

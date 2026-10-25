@@ -68,7 +68,18 @@ For every protected request:
 
 Default to transient processing of repository metadata and source. Persist user preferences or recent repositories only when needed and documented. Do not persist private source code by default. If caching is introduced, document retention, invalidation, access control, and deletion behavior.
 
-## 8. Threat model
+## 8. Managed workspace boundary
+
+Git execution uses the server-managed workspace model from decision D-013. A workspace is owned by an application user and bound to one authorized repository and remote. The browser receives a workspace identifier and typed Git state; it never receives a GitHub token, remote credential, host filesystem path, shell, or arbitrary Git command channel.
+
+- Authorize every workspace read and mutation against the current application session, repository access, and workspace owner.
+- Run each workspace in an isolated worker with resource, time, disk, and concurrency limits; do not execute repository hooks or project scripts as part of Git operations.
+- Keep GitHub credentials in the server-side credential boundary. Use them only for the requested remote operation and redact them from process arguments, logs, errors, and job metadata.
+- Encrypt workspace storage in transit and at rest where provided by deployment infrastructure. Define retention and deletion before private-repository workspaces ship.
+- Treat operation timeouts as unknown outcomes. Reconcile Git state before retrying any mutating operation.
+- A workspace may contain private source and uncommitted changes, so it is protected data even when the remote repository is public.
+
+## 9. Threat model
 
 | Threat | Mitigation |
 |---|---|
@@ -82,8 +93,11 @@ Default to transient processing of repository metadata and source. Persist user 
 | API abuse | Rate-limit application endpoints and respect GitHub limits |
 | Session theft | Secure cookies, HTTPS, expiry and invalidation |
 | Malicious repository content | Never execute repository code; safely render source as text |
+| Workspace escape or command injection | Typed operation allowlist, isolated worker, no shell input, resource limits |
+| Cross-user workspace access | Owner/repository authorization on every request and storage lookup |
+| Loss of uncommitted work | Durable workspace storage, confirmed operation state, explicit close/delete flows |
 
-## 9. Security acceptance criteria
+## 10. Security acceptance criteria
 
 - No OAuth secret or privileged token appears in a production client bundle.
 - Callback state validation is tested.
@@ -92,3 +106,5 @@ Default to transient processing of repository metadata and source. Persist user 
 - Source code is rendered as text, not executed as HTML or JavaScript.
 - Logs and error messages do not reveal credentials.
 - Logout invalidates the application session.
+- Workspace operations cannot address another user's workspace or execute arbitrary commands.
+- Workspace credentials and filesystem paths never cross the browser boundary.

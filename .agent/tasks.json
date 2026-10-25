@@ -11,7 +11,7 @@
     "title": "Choose the Git workspace architecture",
     "category": "architecture",
     "specFilePath": ".agent/tasks/TASK-2.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-3",

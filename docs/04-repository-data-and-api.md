@@ -131,3 +131,28 @@ Normalize errors into user-facing categories:
 - Unexpected service error
 
 Error messages must not expose tokens, raw stack traces, or private information.
+
+## 10. Managed Git workspace model
+
+The Git workspace is server-managed, isolated per user and repository, and accessed through typed application operations. It is distinct from the revision-scoped GitHub repository model:
+
+```ts
+interface GitWorkspace {
+  id: string;
+  repository: { owner: string; name: string };
+  remoteUrl: string;
+  defaultBranch: string;
+  currentBranch: string;
+  headSha: string | null;
+  upstreamSha: string | null;
+  workingTree: "clean" | "modified" | "conflicted";
+  stagedCount: number;
+  unstagedCount: number;
+  sync: { ahead: number; behind: number };
+  operation: "idle" | "cloning" | "fetching" | "pulling" | "pushing" | "conflict";
+}
+```
+
+Lifecycle: create or resume a workspace, clone or open its remote, inspect actual Git state, perform one typed operation at a time, reconcile state after interruption, and explicitly close or delete it. Switching repositories must keep each workspace's uncommitted state visible and must not silently discard it. The workspace service owns Git objects, index, working tree, progress, cancellation boundaries, and conflict state; the 3D and 2D clients consume snapshots and diffs.
+
+The web client requires network access for workspace operations. It does not promise offline commits or access to an arbitrary local desktop directory. Durable retention, deletion, storage quotas, and backup policy are deployment requirements before private workspaces are enabled broadly.

@@ -19,3 +19,10 @@
 - `bun run test` blocked by existing Node `.ts` loading failures and an unrelated `ralph-capture` failure.
 - `bun run typecheck` blocked by missing existing Playwright, Vitest, and Node type dependencies.
 - `bun run build` blocked by missing Rollup native optional dependency.
+
+## TASK-2 — Choose the Git workspace architecture
+
+- Compared browser-local, server-managed, and hybrid Git workspace models against IWSDK/WebXR portability, durability, security, and deployment.
+- Recorded D-013: isolated server-managed Git workers with durable per-user/repository workspaces and typed allowlisted API operations.
+- Aligned system architecture, authentication/security, repository data, and API contracts without adding Git write code or permissions.
+- Verified documentation JSON and whitespace; full Bun checks reported below.

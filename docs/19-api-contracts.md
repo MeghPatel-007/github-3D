@@ -1,6 +1,6 @@
 # API Contracts
 
-**Status:** Proposed read-only repository/API contract for the first milestone; Git workspace operations require a separate contract after D-012  
+**Status:** Proposed repository and managed-workspace contract; implementation remains sequenced by the task roadmap
 **Project:** GitHub 3D: Code as a World
 
 ## 1. Contract principles
@@ -12,6 +12,7 @@
 - Never return OAuth client secrets, access tokens, or session internals to the browser.
 - Do not log source contents or credentials by default.
 - These endpoints cover authenticated repository exploration only. They do not implement a local Git index, working tree, commit, or remote synchronization and must not be presented as a substitute for those workflows.
+- Git workspace endpoints below use an isolated server-managed Git engine. They expose typed state and operations only; they do not expose credentials, filesystem paths, shells, or arbitrary Git commands.
 
 ## 2. Base path and conventions
 
@@ -186,7 +187,29 @@ Dependency edges must identify whether they are resolved, unresolved, external, 
 
 Optional for a later phase. Returns commit metadata, not patches by default. Keep the response bounded and paginate.
 
-## 5. Error format
+## 6. Managed workspace endpoints
+
+All workspace endpoints require an authenticated session and repository authorization. Workspace IDs are opaque and owner-scoped.
+
+### `POST /api/v1/workspaces`
+
+Creates or resumes a managed workspace for an authorized repository. The request selects a repository and optional branch; it does not provide a remote URL or command.
+
+### `GET /api/v1/workspaces/{workspaceId}`
+
+Returns the confirmed `GitWorkspace` snapshot: current branch, HEAD, upstream, working-tree summary, staged/unstaged counts, sync status, conflict status, and active operation.
+
+### `POST /api/v1/workspaces/{workspaceId}/operations`
+
+Accepts an allowlisted operation such as `clone`, `fetch`, `checkout`, `create-branch`, `diff`, `stage`, `unstage`, `discard`, `commit`, `pull`, `push`, `abort-conflict`, or `continue-conflict`. Each operation has a typed payload, idempotency key where applicable, and a progress/result contract. The server reports confirmed Git state after completion or marks the outcome unknown after timeout until reconciliation.
+
+### `DELETE /api/v1/workspaces/{workspaceId}`
+
+Closes or deletes a workspace only after explicit confirmation and a clean/retained-work warning. Deletion must never be implied by repository switching.
+
+Workspace responses must never include access tokens, credential helpers, host paths, command lines, hook output containing secrets, or unbounded repository content. Long operations may return a job identifier and progress events, but cancellation must not claim rollback unless Git confirms it.
+
+## 7. Error format
 
 ```json
 {
@@ -212,7 +235,7 @@ Recommended codes:
 | 502 | `UPSTREAM_GITHUB_ERROR` | Upstream API failed |
 | 503 | `ANALYSIS_UNAVAILABLE` | Analysis service temporarily unavailable |
 
-## 6. Security and reliability requirements
+## 8. Security and reliability requirements
 
 - Enforce authorization on every repository and content endpoint.
 - Validate owner, repository, path, ref, and SHA inputs.
@@ -222,11 +245,17 @@ Recommended codes:
 - Never rely on client-supplied repository IDs as proof of access.
 - Use `Cache-Control: no-store` for sensitive user/session responses.
 - Redact credentials, cookies, authorization headers, and source text from logs.
+- Authorize workspace ownership and repository access on every request.
+- Serialize conflicting operations per workspace and reconcile after timeout or worker restart.
+- Apply worker CPU, memory, disk, duration, and concurrency limits.
+- Do not execute repository hooks, scripts, or arbitrary commands.
 
-## 7. Acceptance criteria
+## 9. Acceptance criteria
 
 - Contracts are implemented and covered by schema tests.
 - Unauthenticated requests to protected endpoints fail consistently.
 - Private repository access is checked server-side.
 - All tree/content/dependency results identify the same commit SHA.
 - Error codes and loading states are mapped to clear UI behavior.
+- Workspace state is confirmed by Git after each operation; unknown outcomes remain explicit.
+- Workspace APIs never expose credentials or arbitrary command execution.
