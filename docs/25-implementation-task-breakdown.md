@@ -1,115 +1,98 @@
 # Implementation Task Breakdown
 
-**Status:** Proposed backlog  
-**Project:** GitHub 3D: Code as a World
+**Status:** Living roadmap; the current implementation is an early read-only explorer.  
+**Product target:** A fully working, GitHub Desktop-style Git client whose primary workspace is a navigable 3D repository world.  
+**Delivery rule:** Each Ralph invocation completes one indexed task, verifies it, commits it, and stops.
 
-## 1. Delivery strategy
+## Product outcome
 
-Build a thin end-to-end vertical slice first: demo fixture → normalized tree → 3D scene → select file → source inspector. Add GitHub authentication and live repository import after the core experience works. This separates visualization risks from OAuth and API integration risks.
+The finished application must let a developer sign in with GitHub, select or clone a repository, work with branches and file changes, review diffs, stage or unstage changes, commit, fetch, pull, push, resolve conflicts, inspect history, and open related GitHub pages—all through a coherent 3D-first interface with a complete 2D route for precise work and accessibility. The application must keep GitHub as the remote source of truth and accurately expose local working-tree state. Never claim feature parity until each capability below is implemented and verified.
 
-## 2. Epics and tasks
+Exact implementation must follow an architecture decision for where Git executes and where local repository data lives. Do not grant write permissions or implement writes before that decision and the related security review.
 
-### Epic A — Project foundation
-- [ ] A1. Initialize TypeScript app, formatting, lint, type-check, test, and build scripts.
-- [ ] A2. Add shared domain types and runtime schemas.
-- [ ] A3. Add environment validation and `.env.example`.
-- [ ] A4. Add CI checks and a clean-checkout setup guide.
-- [ ] A5. Add error boundary and consistent loading/error components.
+## Epics and exit criteria
 
-**Acceptance:** a clean checkout installs, tests, type-checks, and builds using documented commands.
+### A. Reliable foundation and live GitHub account
 
-### Epic B — Demo data and repository model
-- [ ] B1. Create `tiny-ts` fixture and manifest.
-- [ ] B2. Normalize directory/file nodes with stable IDs.
-- [ ] B3. Implement parent-child relationships and path lookup.
-- [ ] B4. Add deterministic unit tests for tree normalization.
-- [ ] B5. Add revision SHA to every imported model.
+- Complete the current invalid-import regression tests (TASK-1).
+- Implement secure GitHub sign-in, session expiry/revocation, logout, and repository authorization.
+- Replace fixture-only repository selection with accessible repository search, recent repositories, and clear clone/import/open states.
 
-**Acceptance:** fixture produces stable, revision-scoped nodes and correct hierarchy.
+**Exit:** A signed-in user can select a repository they are authorized to access; auth failures and denial are recoverable; credentials stay server-side.
 
-### Epic C — 3D workspace
-- [ ] C1. Build scene canvas and camera controls.
-- [ ] C2. Render directories and files with distinct shapes.
-- [ ] C3. Add deterministic hierarchical spatial layout.
-- [ ] C4. Implement hover, select, focus, and reset-camera behavior.
-- [ ] C5. Add node labels or a details panel without excessive scene clutter.
-- [ ] C6. Add node/edge visibility limits and a 2D fallback.
-- [ ] C7. Test scene behavior with mouse, keyboard, and touch where supported.
+### B. Git workspace architecture and repository lifecycle
 
-**Acceptance:** users can navigate a fixture, select nodes, and recover from dense or unsupported scenes.
+- Decide and document the Git engine and workspace-storage model before adding write operations.
+- Support creating/opening a local or managed workspace, cloning a remote, publishing a new repository, and switching repositories without losing unsaved changes.
+- Track remote, default branch, current branch, HEAD, working tree, and sync status as distinct state.
+- Provide progress, cancellation where safe, and recovery for interrupted clone/fetch operations.
 
-### Epic D — Inspector and search
-- [ ] D1. Build file/folder inspector.
-- [ ] D2. Add safe, bounded source viewer.
-- [ ] D3. Add filename/path search.
-- [ ] D4. Focus a search result in the scene and expose it in the 2D tree.
-- [ ] D5. Show truncated or unavailable source content honestly.
+**Exit:** A clean session can create/open/clone a repository and report its actual Git state; no feature is simulated with fixture-only data.
 
-**Acceptance:** users can find a file and inspect its metadata/content without relying solely on spatial navigation.
+### C. Branches and change review
 
-### Epic E — Dependency analysis
-- [ ] E1. Parse supported JS/TS import syntax.
-- [ ] E2. Resolve relative imports using documented extension/index rules.
-- [ ] E3. Classify external, unresolved, unsupported, and resolved edges.
-- [ ] E4. Add edge visibility filters and a legend.
-- [ ] E5. Add tests for cycles, missing files, aliases, and unsupported syntax.
-- [ ] E6. Show analysis coverage and file limits.
+- List, create, switch, rename, and delete branches with protection against deleting the checked-out branch.
+- Show changed, added, deleted, renamed, and untracked files.
+- Show accurate text diffs; identify binary, large, and unsupported changes.
+- Stage and unstage individual files and hunks; discard changes only after clear confirmation and with recoverable safeguards where feasible.
 
-**Acceptance:** every rendered dependency edge comes from analysis output and carries a resolution status.
+**Exit:** The branch and change views agree with Git state; staged and unstaged diffs are distinct; destructive actions are explicit and tested.
 
-### Epic F — GitHub authentication and API
-- [ ] F1. Choose OAuth or GitHub App based on required access and current platform guidance.
-- [ ] F2. Implement secure login callback and session lifecycle.
-- [ ] F3. Implement repository listing.
-- [ ] F4. Implement import and resolve requested ref to commit SHA.
-- [ ] F5. Fetch normalized tree at that SHA.
-- [ ] F6. Fetch bounded source content at that SHA.
-- [ ] F7. Handle upstream errors, rate limits, retries, and cancellation.
-- [ ] F8. Add authorization tests for private repositories.
-- [ ] F9. Add logout and session-expiry handling.
+### D. Commit, sync, and conflict recovery
 
-**Acceptance:** an authorized user can import an accessible repository without exposing credentials to the browser.
+- Create commits from staged changes with validation and author identity handling.
+- Fetch and display remote status; pull and push with progress, cancellation boundaries, and authentication recovery.
+- Handle divergent branches, merge conflicts, rebase/merge choices where supported, and safe abort/continue flows.
+- Never silently overwrite local changes or imply a remote update succeeded before confirmation from Git.
 
-### Epic G — Reliability and release
-- [ ] G1. Add request IDs, structured logs, and secret redaction.
-- [ ] G2. Add API contract tests.
-- [ ] G3. Add Playwright smoke tests for demo import and workspace interactions.
-- [ ] G4. Benchmark representative scene sizes and set evidence-based limits.
-- [ ] G5. Verify responsive behavior, reduced motion, and keyboard access.
-- [ ] G6. Configure HTTPS, secure cookies, CORS, CSP, and secret management.
-- [ ] G7. Document deployment and rollback.
-- [ ] G8. Prepare a scripted demo path and known limitations.
+**Exit:** A user can make a local commit, sync it to GitHub, recover from common conflicts, and verify the resulting branch/commit state.
 
-**Acceptance:** release candidate passes required tests and has documented security/performance limitations.
+### E. History and GitHub context
 
-### Epic H — Later features (not MVP blockers)
-- [ ] H1. Symbol and function definitions.
-- [ ] H2. Reference/call-site tracing.
-- [ ] H3. Commit timeline navigation.
-- [ ] H4. Saved layouts and user preferences.
-- [ ] H5. Additional languages and configurable parser support.
-- [ ] H6. Optional physics interactions after usability validation.
+- Browse commits, inspect commit details, and compare revisions with trustworthy changed-file data.
+- Open the repository, branch, and commit in GitHub; create or open a pull request for a published branch where authorized.
+- Keep Git operations separate from GitHub-hosted issues/reviews; add each integration only with its own scope and permissions.
 
-## 3. Recommended order
+**Exit:** History and external GitHub context are revision-correct, bounded, and clearly distinguish local Git state from GitHub API state.
 
-1. A1–A5: foundation.
-2. B1–B5: deterministic model.
-3. C1–C7: 3D vertical slice.
-4. D1–D5: usable exploration.
-5. E1–E6: truthful dependency graph.
-6. F1–F9: live GitHub integration.
-7. G1–G8: release hardening.
-8. H features only after MVP acceptance.
+### F. 3D-first desktop experience
 
-For a short hackathon, keep authentication and repository import simple, support a deliberately limited language subset, and prioritize a polished working demo over speculative advanced features.
+- Make the repository world the main work surface, with spatial regions for directories and clear representations of branch/working-tree status.
+- Keep search, tree, status, diff, staging, commit, branch, sync, and conflict actions available through legible panels and keyboard controls.
+- Synchronize scene selection with all 2D navigation and inspection views.
+- Provide camera recovery, reduced motion, responsive layout, and a 2D fallback that supports all essential Git actions.
 
-## 4. Definition of done
+**Exit:** A user can complete the primary repository workflow without getting lost or being forced to use spatial input; 3D adds useful structure rather than hiding Git details.
 
-A task is done when:
-- Acceptance criteria pass.
-- Types and runtime validation are updated.
-- Tests cover success and relevant failure cases.
-- Loading, empty, and error states are handled.
-- Security and accessibility implications are reviewed.
-- Documentation is updated where behavior or configuration changed.
-- The implementation does not overstate analysis completeness.
+### G. Analysis, security, performance, and release
+
+- Keep dependency/symbol analysis evidence-based and optional to core Git operations.
+- Enforce least-privilege GitHub permissions by feature; audit tokens, local workspace access, logs, and destructive actions.
+- Test end-to-end flows for clone/open, branches, diff/stage/commit, sync, conflict recovery, history, and 3D/2D parity.
+- Measure realistic repository size and frame-time budgets; document supported platforms and remaining gaps.
+
+**Exit:** Release checks pass for the complete supported workflow, security and accessibility gates pass, and a published capability matrix accurately lists unsupported behavior.
+
+## Work order
+
+The Ralph task index follows this dependency order, one task per invocation:
+
+1. TASK-1 — Validate invalid repository import responses.
+2. TASK-2 — Choose and document the Git workspace architecture.
+3. TASK-3 — Complete secure GitHub sign-in and session lifecycle.
+4. TASK-4 — Add authenticated repository discovery and selection.
+5. TASK-5 — Open and clone real Git workspaces.
+6. TASK-6 — Add safe branch management.
+7. TASK-7 — Show working-tree changes and accurate diffs.
+8. TASK-8 — Implement safe staging and discard actions.
+9. TASK-9 — Create commits from staged changes.
+10. TASK-10 — Synchronize branches with GitHub remotes.
+11. TASK-11 — Recover from merge conflicts safely.
+12. TASK-12 — Add commit history and revision comparison.
+13. TASK-13 — Add pull-request creation and GitHub context.
+14. TASK-14 — Connect Git workflows to the 3D-first workspace.
+15. TASK-15 — Verify the complete supported desktop-style workflow.
+
+These are sequential slices toward the complete outcome, not claims that the listed functionality exists today. Split any task further if its verified implementation cannot reasonably fit one Ralph invocation.
+
+Task index order is priority order. Keep each task small enough for one Ralph invocation. A task is complete only when its own acceptance criteria and verification pass, its status/log are updated truthfully, and its Conventional Commit succeeds. No push or publish without explicit authorization.

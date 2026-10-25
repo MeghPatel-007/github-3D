@@ -5,7 +5,7 @@
 
 ## 1. Purpose
 
-Record the initial implementation stack, explain why each dependency exists, and prevent unnecessary library churn. Versions should be pinned in the package manager lockfile and checked against official compatibility guidance at implementation time.
+Record the initial implementation stack, explain why each dependency exists, and prevent unnecessary library churn. Bun is the only package manager; `bun.lock` is authoritative. Versions should be checked against official compatibility guidance at implementation time.
 
 ## 2. Proposed stack
 

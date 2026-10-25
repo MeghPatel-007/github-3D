@@ -30,19 +30,31 @@
 **Decision:** Keep a conventional file tree and inspector usable independently of WebGL.  
 **Reason:** Accessibility, small screens, weak devices, and renderer failures must not block core use.
 
-### D-008: History and symbol references are post-MVP
-**Decision:** Defer these until the end-to-end repository journey is reliable.  
-**Reason:** They increase complexity and are not required to validate the central product idea.
+### D-008: History is in the complete product target
+**Decision:** Commit history and revision comparison are required for the complete desktop-style client, sequenced after reliable repository and working-tree workflows. Symbol references remain an advanced analysis feature.  
+**Reason:** History is a normal part of understanding and operating on Git repositories; deferring its implementation does not remove it from the product mission.
 
 ### D-009: IWSDK is the application and rendering stack
 **Decision:** Build the app on the existing IWSDK scaffold: Vite + TypeScript, Three.js through `@iwsdk/core`, ECS systems, and UIKitML/DOM panels. React, React Three Fiber, and Drei are not used.  
 **Reason:** The repository already ships an IWSDK app, IWSDK skills, and scoped project rules; adding a second renderer stack would duplicate scene ownership. A Node.js backend for OAuth and protected GitHub calls is unchanged by this decision.  
 **Supersedes:** React/R3F stack lines in `02-system-architecture.md`, `11-3d-rendering-and-scene-models.md`, `13-camera-controls-and-input.md`, and `18-sdk-and-dependency-matrix.md`.
 
+### D-010: GitHub App for the initial read workflow
+**Decision:** Use GitHub App user authorization with `Contents: read-only` and `Metadata: read-only` repository permissions for the initial browse/import milestone. Require installation on accounts whose private repositories users want to browse. Request expiring user tokens and use PKCE. Review and add narrowly scoped write permission only when a shipped feature requires it.  
+**Reason:** GitHub Apps provide fine-grained permissions and short-lived user tokens, unlike broad OAuth App repository scopes. The API keeps tokens server-side. This initial permission set does not by itself fulfill the full Git-client product target.
+
+### D-011: GitHub Desktop-style workflow is the product north star
+**Decision:** Deliver a working Git client with a 3D-first repository workspace and a complete 2D route for core operations. The target includes opening/cloning repositories, branch management, change review, staging, commits, fetch/pull/push, conflict recovery, history, and related GitHub context.  
+**Reason:** A read-only repository visualization is only an early milestone and does not satisfy the user's stated product goal.
+
+### D-012: Decide Git execution and workspace storage before writes
+**Decision:** No implementation approach for local Git execution or workspace storage is approved yet. Add an architecture decision record comparing browser-local, server-managed, and other feasible approaches against IWSDK/WebXR, security, platform access, durability, and deployment constraints before building write operations.  
+**Reason:** GitHub's REST API alone does not provide a safe substitute for a full local Git workspace, and the choice changes authentication, persistence, deployment, and recovery boundaries.
+
 ## 2. Open questions to resolve before production
 
 - **Q-001:** Should login be mandatory to explore any repository, or should public repositories support guest mode? Recommended default: keep the landing page public, require GitHub sign-in for the main dashboard, and allow public URL import after sign-in.
-- **Q-002:** Should the app use an OAuth App or GitHub App? Choose based on required repository permissions, installation model, and deployment needs; verify current GitHub guidance.
+- **Q-002:** Resolved by D-010: use a GitHub App with read-only repository permissions and explicit installation.
 - **Q-003:** Which languages are required for the first demo? Recommended initial subset: JavaScript, TypeScript, JSX, and TSX.
 - **Q-004:** What is the target repository size? Establish a tested budget for files, bytes analyzed, visible objects, and edges.
 - **Q-005:** Should recent repositories persist across devices? If yes, define database and retention requirements; otherwise keep a local/session-level recent list.
@@ -51,6 +63,8 @@
 - **Q-008:** What visual theme and motion intensity are preferred? Establish reduced-motion and low-effects modes regardless.
 - **Q-009:** Which browsers and devices must be supported? Define a minimum browser/WebGL baseline and test it.
 - **Q-010:** Is persistent analysis caching required? Start without durable source-content storage; add only when measured performance or scale requires it.
+- **Q-011:** Which Git engine/workspace model should power local repository operations? Resolve through D-012 before implementing clone, index, commit, or synchronization behavior.
+- **Q-012:** Which GitHub Desktop workflows beyond core Git operations are required for the first complete release (for example, pull-request creation/viewing or issue links)? Track each as an explicit capability and permission instead of implying broad parity.
 
 ## 3. Risks
 
@@ -63,7 +77,7 @@
 | OAuth takes too much hackathon time | Build a tested mocked flow early, then integrate real auth before release |
 | Private token leaks | Server-side handling, secure cookies, redacted logs, security tests |
 | Animation harms usability | Short, skippable transition and reduced-motion option |
-| Scope grows uncontrollably | Enforce P0/P1/post-MVP release gates |
+| Scope grows uncontrollably | Enforce milestone gates and keep the full product target explicit |
 
 ## 4. Change-control rule
 

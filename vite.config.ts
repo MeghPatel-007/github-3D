@@ -10,7 +10,15 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [iwsdkDev()],
-  server: { host: '0.0.0.0', port: 8081, open: false },
+  server: {
+    host: '0.0.0.0',
+    port: 8081,
+    open: false,
+    proxy: {
+      '/api': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+      '/auth': { target: 'http://127.0.0.1:3001', changeOrigin: true },
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV !== 'production',

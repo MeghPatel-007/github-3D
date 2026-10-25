@@ -8,10 +8,14 @@
 import { World } from '@iwsdk/core';
 import projectOptions from 'virtual:iwsdk-project';
 import { RepoExplorerSystem } from './repo-explorer.js';
+import { mountRepositoryUi } from './repository-ui.js';
+
+mountRepositoryUi();
 
 World.create(
   document.getElementById('scene-container') as HTMLDivElement,
   projectOptions,
 ).then((world) => {
   world.registerSystem(RepoExplorerSystem);
+  window.dispatchEvent(new Event('repo:system-ready'));
 });

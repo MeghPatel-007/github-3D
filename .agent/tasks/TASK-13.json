@@ -1,0 +1,20 @@
+{
+  "id": "TASK-13",
+  "title": "Add pull-request creation and GitHub context",
+  "category": "github-integration",
+  "description": "Let users open repository/branch/commit context in GitHub and create or open a pull request for a published branch using authorized GitHub APIs.",
+  "acceptanceCriteria": [
+    "Repository, branch, and commit actions open the correct GitHub destinations.",
+    "A pull request can be created only for a published branch with verified base/head and an explicit user action.",
+    "Permission denial, missing upstream, existing pull request, rate limits, and API errors have truthful recovery states.",
+    "Only the minimum GitHub App permission for this feature is documented and requested; no token enters the renderer or logs."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect GitHub PR API and current permission contracts", "details": "Use current official GitHub docs and do not add broad permissions." },
+    { "step": 2, "pass": false, "description": "Implement explicit PR create/open flow", "details": "Use the verified published branch and require user confirmation before creating." },
+    { "step": 3, "pass": false, "description": "Test authorization and API outcomes", "details": "Cover success, duplicate/existing PR, missing upstream, permission denial, and rate limits." }
+  ],
+  "dependencies": ["TASK-4", "TASK-10"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Pull requests are GitHub-hosted collaboration, not local Git state.", "Never push, publish, or create a PR without explicit user authorization."]
+}

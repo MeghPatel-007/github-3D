@@ -18,7 +18,8 @@ import {
   Pressed,
 } from '@iwsdk/core';
 import { RepoKind, RepoNode } from './components.js';
-import { buildRepoModel, tinyTsFixture, type RepoModel } from './repo-model.js';
+import { buildRepoModel, tinyTsFixture, type RepoFixture, type RepoModel } from './repo-model.js';
+import { fetchRepositoryFile, RepositoryApiError } from './repository-api.js';
 
 // Directory groups sit on a ring around the hub; the player origin stays clear.
 const CENTER = { x: 0, y: 0, z: -7 };
@@ -26,6 +27,7 @@ const RING_RADIUS = 6;
 const FILE_COLS = 2;
 const FILE_SPACING = 1.1;
 const MAX_FILE_BYTES = 3072;
+const MAX_SCENE_ENTRIES = 499;
 
 type UIKitElement = NonNullable<ReturnType<UIKitMLAsset['getElementById']>>;
 
@@ -35,6 +37,7 @@ export class RepoExplorerSystem extends createSystem({
 }) {
   private model!: RepoModel;
   private entryToEntity = new Map<string, Entity>();
+  private sceneEntities: Entity[] = [];
   private selectedPath: string | null = null;
   private lastMaterial = new Map<number, MeshStandardMaterial>();
   private rows: { path: string; element: UIKitElement }[] = [];
@@ -49,6 +52,16 @@ export class RepoExplorerSystem extends createSystem({
   private inspectorEmpty!: UIKitElement;
   private geometries: (BoxGeometry | CylinderGeometry)[] = [];
   private materials: MeshStandardMaterial[] = [];
+  private contentRequest = 0;
+  private contentController: AbortController | null = null;
+
+  private onRepositoryLoad = (event: Event): void => {
+    this.replaceRepository((event as CustomEvent<RepoFixture>).detail);
+  };
+
+  private onRepositorySelect = (event: Event): void => {
+    this.selectPath((event as CustomEvent<string>).detail);
+  };
 
   // [0]=idle file, [1]=hover, [2]=idle dir, [3]=selected
   private materialFor(kind: string, selected: boolean, hovered: boolean): MeshStandardMaterial {
@@ -64,9 +77,15 @@ export class RepoExplorerSystem extends createSystem({
     );
     this.buildWorld();
     this.wirePanel();
+    window.dispatchEvent(new Event('repo:system-ready'));
+    window.addEventListener('repo:load', this.onRepositoryLoad);
+    window.addEventListener('repo:select', this.onRepositorySelect);
     this.cleanupFuncs.push(
+      () => window.removeEventListener('repo:load', this.onRepositoryLoad),
+      () => window.removeEventListener('repo:select', this.onRepositorySelect),
+      () => this.disposeSceneEntities(),
       this.queries.pressed.subscribe('qualify', (entity) => {
-      this.selectPath(entity.getValue(RepoNode, 'path') ?? '');
+        this.selectPath(entity.getValue(RepoNode, 'path') ?? '');
       }),
       () => {
         for (const geometry of this.geometries) geometry.dispose();
@@ -109,6 +128,7 @@ export class RepoExplorerSystem extends createSystem({
     hub.name = 'repo-hub';
     hub.position.set(CENTER.x, 0.06, CENTER.z);
     const hubEntity = this.world.createTransformEntity(hub);
+    this.sceneEntities.push(hubEntity);
     hubEntity.addComponent(RayInteractable);
     hubEntity.addComponent(RepoNode, {
       path: '',
@@ -118,7 +138,16 @@ export class RepoExplorerSystem extends createSystem({
     this.entryToEntity.set('', hubEntity);
 
     // Directories as spatial groups on the ring (FR-3D-02).
-    const directories = this.model.entries.filter((e) => e.type === 'tree');
+    const directories = this.model.entries.filter((e) => e.type === 'tree').slice(0, 100);
+    const visibleDirectories = new Set(directories.map((entry) => entry.path));
+    const visibleFiles = this.model.entries.filter((entry) => entry.type === 'blob' && (() => {
+      const parent = entry.path.split('/').slice(0, -1).join('/');
+      return parent === '' || visibleDirectories.has(parent);
+    })()).slice(0, MAX_SCENE_ENTRIES - directories.length);
+    const visiblePaths = new Set([
+      ...directories.map((entry) => entry.path),
+      ...visibleFiles.map((entry) => entry.path),
+    ]);
     const geometryPlate = this.addGeometry(new BoxGeometry(2.4, 0.08, 2.4));
     const dirPos = new Map<string, { x: number; y: number; z: number }>();
     directories.forEach((dir, index) => {
@@ -133,6 +162,7 @@ export class RepoExplorerSystem extends createSystem({
       plate.name = `dir-${dir.path}`;
       plate.position.set(pos.x, 0.04, pos.z);
       const plateEntity = this.world.createTransformEntity(plate);
+      this.sceneEntities.push(plateEntity);
       plateEntity.addComponent(RayInteractable);
       plateEntity.addComponent(RepoNode, {
         path: dir.path,
@@ -146,7 +176,7 @@ export class RepoExplorerSystem extends createSystem({
     for (const [parent, children] of this.model.childrenOf) {
       const files = children
         .map((child) => this.model.pathToEntry.get(child)!)
-        .filter((entry) => entry.type === 'blob');
+        .filter((entry) => entry.type === 'blob' && visiblePaths.has(entry.path));
       const base = parent === '' ? CENTER : dirPos.get(parent)!;
       const baseY = parent === '' ? 0.12 : 0.08;
       files.forEach((file, index) => {
@@ -163,6 +193,7 @@ export class RepoExplorerSystem extends createSystem({
           base.z + row * FILE_SPACING,
         );
         const entity = this.world.createTransformEntity(box);
+        this.sceneEntities.push(entity);
         entity.addComponent(RayInteractable);
         entity.addComponent(RepoNode, {
           path: file.path,
@@ -188,18 +219,16 @@ export class RepoExplorerSystem extends createSystem({
     this.inspectorDependencies = panel.getElementById('insp-deps')!;
     this.inspectorEmpty = panel.getElementById('insp-empty')!;
 
-    this.model.entries.forEach((entry, index) => {
+    for (let index = 0; ; index += 1) {
       const element = panel.getElementById(`item-${index}`);
-      if (!element) return;
-      element.name = `tree-row-${entry.path}`;
-      const indent = '\u00a0\u00a0'.repeat(entry.path.split('/').length - 1);
-      const label = entry.type === 'tree' ? `[dir] ${entry.path}` : entry.path;
-      element.setProperties({ text: `${indent}${label}` });
-      const select = () => this.selectPath(entry.path);
+      if (!element) break;
+      element.name = `tree-row-${index}`;
+      const select = () => this.selectPath(this.rows[index]?.path ?? '');
       element.addEventListener('click', select);
       this.cleanupFuncs.push(() => element.removeEventListener('click', select));
-      this.rows.push({ path: entry.path, element });
-    });
+      this.rows.push({ path: '', element });
+    }
+    this.refreshPanelRows();
     this.inspectorEmpty.setProperties({ display: 'flex' });
     this.inspectorBody.setProperties({ display: 'none' });
   }
@@ -207,7 +236,7 @@ export class RepoExplorerSystem extends createSystem({
   private selectPath(path: string): void {
     this.selectedPath = path;
     const entry = this.model.pathToEntry.get(path);
-    if (!entry) return;
+    if (!entry || !this.inspectorBody) return;
     if (this.selectedRow) {
       this.selectedRow.setProperties({ backgroundColor: 'transparent', color: '' });
       this.selectedRow = null;
@@ -230,14 +259,71 @@ export class RepoExplorerSystem extends createSystem({
       text: entry.type === 'tree'
         ? 'Select a file to inspect its source.'
         : source == null
-          ? 'Source unavailable in this fixture.'
+          ? 'Loading source…'
           : `${source.slice(0, 1200)}${source.length > 1200 ? '\n[Source preview truncated]' : ''}`,
     });
+    this.contentController?.abort();
+    this.contentController = null;
+    if (entry.type === 'blob' && source == null) this.loadSource(path, this.model.commitSha);
     const related = this.model.dependencies.filter((edge) => edge.fromPath === path || edge.toPath === path);
     this.inspectorDependencies.setProperties({
       text: related.length
         ? related.map((edge) => `${edge.fromPath} -> ${edge.toPath ?? edge.specifier} [${edge.resolution}]`).join('\n')
-        : 'No detected imports for this selection.',
+        : this.model.id === tinyTsFixture.id
+          ? 'No detected imports for this selection.'
+          : 'Import analysis is not available for live repositories yet.',
     });
+    window.dispatchEvent(new CustomEvent('repo:selected', { detail: path }));
+  }
+
+  private replaceRepository(fixture: RepoFixture): void {
+    this.contentController?.abort();
+    this.contentRequest += 1;
+    this.disposeSceneEntities();
+    this.selectedPath = null;
+    this.model = buildRepoModel(fixture);
+    this.buildWorld();
+    this.refreshPanelRows();
+    this.selectPath('');
+  }
+
+  private refreshPanelRows(): void {
+    this.rows.forEach((row, index) => {
+      const entry = this.model.entries[index];
+      row.path = entry?.path ?? '';
+      row.element.setProperties({
+        display: entry ? 'flex' : 'none',
+        text: entry
+          ? `${'\u00a0\u00a0'.repeat(Math.max(0, entry.path.split('/').length - 1))}${entry.type === 'tree' ? '[dir] ' : ''}${entry.path}`
+          : '',
+      });
+    });
+    const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
+    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} @ ${this.model.commitSha.slice(0, 7)}` });
+  }
+
+  private loadSource(path: string, commitSha: string): void {
+    const owner = this.model.owner;
+    const repo = this.model.name;
+    if (!owner) return;
+    const request = ++this.contentRequest;
+    const controller = new AbortController();
+    this.contentController = controller;
+    fetchRepositoryFile(owner, repo, path, commitSha, controller.signal).then((file) => {
+      if (request !== this.contentRequest || path !== this.selectedPath || commitSha !== this.model.commitSha) return;
+      this.model.contents[path] = file.content;
+      this.inspectorSource.setProperties({ text: `${file.content.slice(0, 1200)}${file.content.length > 1200 || file.truncated ? '\n[Source preview truncated]' : ''}` });
+    }).catch((error: unknown) => {
+      if (controller.signal.aborted || request !== this.contentRequest) return;
+      if (error instanceof RepositoryApiError && error.status === 401) window.dispatchEvent(new Event('repo:auth-expired'));
+      this.inspectorSource.setProperties({ text: 'Source could not be loaded. Retry by selecting this file again.' });
+    });
+  }
+
+  private disposeSceneEntities(): void {
+    for (const entity of this.sceneEntities) entity.dispose();
+    this.sceneEntities.length = 0;
+    this.entryToEntity.clear();
+    this.lastMaterial.clear();
   }
 }

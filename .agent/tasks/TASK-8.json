@@ -1,0 +1,20 @@
+{
+  "id": "TASK-8",
+  "title": "Implement safe staging and discard actions",
+  "category": "git-workspace",
+  "description": "Allow users to stage/unstage supported changes and discard changes only through explicit, safe controls.",
+  "acceptanceCriteria": [
+    "Users can stage and unstage supported files; hunk-level operations are included only if the chosen Git engine supports them reliably.",
+    "The UI distinguishes index state from working-tree state and refreshes both after each operation.",
+    "Discard actions identify affected paths and require clear confirmation; failure leaves accurate state.",
+    "Tests verify operation results and ensure one action cannot silently discard unrelated changes."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Review Git-engine stage/reset semantics", "details": "Identify any engine limitations and document the smallest safe supported unit." },
+    { "step": 2, "pass": false, "description": "Implement explicit stage/unstage/discard controls", "details": "Keep actions separate from commit and remote synchronization." },
+    { "step": 3, "pass": false, "description": "Verify data-loss safeguards", "details": "Test path scoping, confirmations, stale state, and error recovery." }
+  ],
+  "dependencies": ["TASK-7"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Never discard data as a side effect of switching views or branches."]
+}

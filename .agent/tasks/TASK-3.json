@@ -1,0 +1,20 @@
+{
+  "id": "TASK-3",
+  "title": "Complete secure GitHub sign-in and session lifecycle",
+  "category": "authentication",
+  "description": "Implement the approved GitHub identity and session flow for the real application, following the selected Git workspace architecture and least-privilege rules.",
+  "acceptanceCriteria": [
+    "A user can sign in, return to the application, and see authenticated state without exposing OAuth secrets or privileged tokens to the browser.",
+    "Logout, expired/revoked sessions, denied authorization, and retry paths have clear tested behavior.",
+    "Only permissions needed for the currently implemented read workflows are requested; Git write permissions remain deferred until their feature is implemented.",
+    "The actual configured development flow is documented without exposing .env values."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect the approved auth architecture", "details": "Read applicable auth/security specs and current auth code; do not assume a provider integration not selected in the specs." },
+    { "step": 2, "pass": false, "description": "Implement the smallest secure end-to-end auth slice", "details": "Preserve server-side credential boundaries and existing project conventions." },
+    { "step": 3, "pass": false, "description": "Verify success and failure paths", "details": "Add focused tests for state/session behavior and run required project checks." }
+  ],
+  "dependencies": ["TASK-2"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Do not read, print, copy, or commit .env values.", "Do not request broad GitHub permissions just for future roadmap features."]
+}

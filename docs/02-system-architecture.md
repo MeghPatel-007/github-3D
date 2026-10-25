@@ -9,6 +9,8 @@
 5. **Secure privileged access server-side.** OAuth secrets and protected tokens must not be exposed to the browser.
 6. **Progressive enhancement.** Repository navigation remains useful when WebGL is unavailable.
 7. **Truthful analysis.** Unresolved imports and unsupported semantics must remain explicit.
+8. **Real Git state.** Branch, index, working-tree, and remote operations must come from a real Git engine; the scene is a view over this state.
+9. **Desktop workflow parity by increments.** Read-only exploration is the first milestone. The release target also covers safe local changes, commits, synchronization, and conflict recovery.
 
 ## 2. Logical architecture
 
@@ -71,6 +73,10 @@ Lists accessible repositories, supports search, and imports public repository UR
 ### Repository domain
 Owns GitHub API calls, revision selection, tree retrieval, normalization, and content retrieval.
 
+### Git workspace domain
+
+Owns opening/cloning repositories, the Git object database, branch and index state, diffs, commits, remotes, synchronization, and conflict recovery. Its execution and storage location is an architectural decision that must be recorded before implementing writes. Keep credentials outside the WebXR renderer and expose typed, validated operations to the UI.
+
 ### Analysis domain
 Detects imports and resolves relationships for supported language/configuration combinations.
 
@@ -81,7 +87,7 @@ Owns spatial layout, geometry, labels, camera controls, selection, focus, and ed
 Owns file metadata, source loading, syntax highlighting, dependency list, and source navigation.
 
 ### History domain
-Post-MVP: retrieves commits and changes, builds revision-specific models, and computes structural differences.
+Retrieves commits and changes, builds revision-specific models, and computes structural differences. Basic history and revision comparison are part of the complete desktop-style target; they can follow the initial Git workflow milestone.
 
 ## 5. Data flow
 
@@ -113,8 +119,8 @@ These are application API contracts, not GitHub endpoints. Exact payloads should
 - `GET /api/repositories/:owner/:repo/metadata` — repository metadata and revision info.
 - `GET /api/repositories/:owner/:repo/tree?ref=...` — normalized tree.
 - `GET /api/repositories/:owner/:repo/content?path=...&ref=...` — content for a specific path and revision.
-- `GET /api/repositories/:owner/:repo/commits?ref=...` — post-MVP history endpoint.
-- `GET /api/repositories/:owner/:repo/analysis?ref=...` — post-MVP cached analysis endpoint if needed.
+- `GET /api/repositories/:owner/:repo/commits?ref=...` — history endpoint for a later delivery phase.
+- `GET /api/repositories/:owner/:repo/analysis?ref=...` — optional cached analysis endpoint if needed.
 
 Protected endpoints must derive authorization from the server-side session and verify access to the requested repository. Never trust a client-provided owner/repository pair as proof of authorization.
 

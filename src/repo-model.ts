@@ -12,8 +12,11 @@ export interface RepoEntry {
 
 export interface RepoFixture {
   id: string;
+  owner: string;
   name: string;
+  private?: boolean;
   defaultBranch: string;
+  ref?: string;
   commitSha: string;
   entries: RepoEntry[];
   contents: Record<string, string>;
@@ -28,8 +31,10 @@ export interface DependencyEdge {
 
 export interface RepoModel {
   id: string;
+  owner: string;
   name: string;
   defaultBranch: string;
+  ref?: string;
   /** The revision identity: every view of this model is scoped to it. */
   commitSha: string;
   /** Entries normalized: directories first, then files, each sorted by path. */
@@ -45,8 +50,11 @@ export interface RepoModel {
  * unresolved-import file, README, tests. No live GitHub needed. */
 export const tinyTsFixture: RepoFixture = {
   id: 'tiny-ts',
+  owner: 'octocat',
   name: 'tiny-ts',
+  private: false,
   defaultBranch: 'main',
+  ref: 'main',
   commitSha: 'cafef00d13f4c1e5a9b2d3000000000000000000',
   entries: [
     { path: 'README.md', type: 'blob', size: 78 },

@@ -1,0 +1,39 @@
+{
+  "id": "TASK-2",
+  "title": "Choose the Git workspace architecture",
+  "category": "architecture",
+  "description": "The product target is a fully working GitHub Desktop-style client, not only a read-only repository visualizer. Decide how Git repositories and operations will work in this IWSDK web application before implementation adds branch, index, commit, or remote-write behavior.",
+  "acceptanceCriteria": [
+    "Compare browser-local Git/workspace storage, a server-managed Git service, and any materially different viable approach against IWSDK/WebXR support, persistence, security, portability, and deployment.",
+    "Recommend one approach and document its data flow, credential boundary, workspace lifecycle, supported platforms, and known limitations.",
+    "Update docs/02-system-architecture.md, docs/03-authentication-and-security.md, docs/04-repository-data-and-api.md, docs/19-api-contracts.md, and docs/10-decisions-and-open-questions.md so they agree with the recommendation.",
+    "Do not implement Git write operations, request write permissions, install dependencies, or expose credentials in this architecture task."
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "pass": false,
+      "description": "Inspect the current app and product constraints",
+      "details": "Read the architecture, security, repository, API, platform, and desktop-style roadmap specs. Inspect only the source needed to confirm the existing runtime and backend boundaries."
+    },
+    {
+      "step": 2,
+      "pass": false,
+      "description": "Compare viable Git workspace approaches",
+      "details": "Use current official technical documentation for any platform or library claims. Compare the approaches against secure auth, local change durability, WebXR/browser limitations, server deployment, and user control."
+    },
+    {
+      "step": 3,
+      "pass": false,
+      "description": "Record the recommendation and update affected contracts",
+      "details": "Write one decision with rationale and migration path. Keep unresolved product choices explicit. Do not alter implementation code or permissions."
+    }
+  ],
+  "dependencies": ["TASK-1"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": [
+    "The first read-only milestone remains useful but is not the final product target.",
+    "No architecture decision may imply success for unimplemented Git operations.",
+    "Do not read, print, or modify .env values."
+  ]
+}

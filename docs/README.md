@@ -2,7 +2,9 @@
 
 This folder is the source of truth for planning and implementing GitHub 3D: **Code as a World**.
 
-## Product flow
+## Product mission and flow
+
+The target is a fully working, GitHub Desktop-style Git client with a 3D-first repository workspace and synchronized 2D controls. Read-only exploration is an early milestone; the full workflow includes repository open/clone, branch management, changes/diffs, staging, commits, remote sync, conflict recovery, and history. See `25-implementation-task-breakdown.md` for its capability gates.
 
 1. A visitor opens a conventional 2D landing page.
 2. They authenticate with GitHub.
@@ -11,7 +13,7 @@ This folder is the source of truth for planning and implementing GitHub 3D: **Co
 5. The application loads a consistent repository revision and builds a normalized model.
 6. The user enters an immersive 3D repository world.
 7. They explore directories and files, inspect source, and follow detected dependencies.
-8. Later releases add symbol references and commit-history navigation.
+8. The user reviews/stages changes, commits, synchronizes, recovers from conflicts, and explores history.
 
 ## Documents
 
@@ -23,7 +25,7 @@ This folder is the source of truth for planning and implementing GitHub 3D: **Co
 | `04-repository-data-and-api.md` | GitHub API strategy, normalized data model, loading, caching, error handling |
 | `05-three-d-world-and-interactions.md` | Spatial layout, scene rules, navigation, selection, accessibility |
 | `06-code-analysis-and-dependencies.md` | Import analysis, resolution, symbol references, accuracy requirements |
-| `07-commit-history.md` | Future timeline and revision comparison requirements |
+| `07-commit-history.md` | Commit timeline and revision comparison requirements for the full product |
 | `08-implementation-plan.md` | Phased implementation plan, milestones, and definition of done |
 | `09-testing-and-acceptance.md` | Test strategy, acceptance criteria, and release gates |
 | `10-decisions-and-open-questions.md` | Architectural decisions, tradeoffs, and unresolved product choices |
@@ -34,6 +36,8 @@ This folder is the source of truth for planning and implementing GitHub 3D: **Co
 | `15-state-management-and-interaction-contracts.md` | Shared state ownership and cross-view interaction rules |
 | `16-performance-budget-and-optimization.md` | Provisional budgets, profiling, optimization, graceful degradation |
 | `17-accessibility-responsive-and-motion.md` | Keyboard access, 2D alternatives, responsive layout, reduced motion |
+| [`design/design.md`](design/design.md) | Primary GitHub 3D journey, immersive workspace composition, visual language, and accessibility guidance |
+| `25-implementation-task-breakdown.md` | Full GitHub Desktop-style capability roadmap and release gates |
 
 ## Specification rules
 
@@ -43,15 +47,15 @@ This folder is the source of truth for planning and implementing GitHub 3D: **Co
 - Do not fabricate metadata, dependency edges, symbol references, or commit changes.
 - The 3D world is an interface over repository data, not the canonical source of truth.
 - Keep the 2D file tree and source inspector usable if WebGL is unavailable.
-- The first release prioritizes a complete, reliable path over feature count.
+- Read-only exploration is an early milestone, not the final product gate.
+- Do not claim desktop-style capability until each workflow in the roadmap is implemented and verified.
 
-## Recommended initial stack
+## Active project stack
 
-- React + TypeScript + Vite
-- React Three Fiber + Three.js + Drei
-- Tailwind CSS
-- Node.js backend for OAuth callback, session handling, and protected GitHub API access
-- GitHub REST API
-- Vitest + React Testing Library + Playwright
+- TypeScript + Vite using the existing IWSDK project scaffold.
+- `@iwsdk/core` for Three.js, ECS, spatial runtime, and scene integration; UIKitML/DOM for panels and accessible 2D controls.
+- Node.js API for the current auth/session and protected GitHub API boundary.
+- GitHub REST API for remote metadata; a separate Git engine/workspace decision is required for full local Git behavior.
+- Node's built-in test runner, TypeScript typecheck, and the configured build scripts.
 
-Exact library versions should be selected and pinned during project setup. Do not treat this document as a lockfile.
+Do not introduce a second renderer stack or assume GitHub REST endpoints alone provide a local Git repository workflow. The active architecture decisions in `10-decisions-and-open-questions.md` supersede older proposed-stack text.

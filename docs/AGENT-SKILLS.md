@@ -57,7 +57,7 @@ There is no project-specific authentication or Better Auth skill. For login, sig
 - [`09-testing-and-acceptance.md`](09-testing-and-acceptance.md)
 - [`10-decisions-and-open-questions.md`](10-decisions-and-open-questions.md)
 
-The current product contract is GitHub sign-in with a secure app session; it does not require email/password signup or prescribe Better Auth. A first-time GitHub sign-in can establish the app's user record. Preserve the documented trust boundaries: secrets and privileged tokens remain server-side, sessions use secure cookies, protected repository requests verify access, permissions stay minimal/read-only, and logout, expiry, revocation, denial, and insufficient-permission states are handled. Inspect the actual IWSDK/Vite app and deployment structure before choosing where the auth server runs.
+The product target is a fully working GitHub Desktop-style client with a 3D-first workspace; the current read-only explorer is an early milestone. Preserve the documented trust boundaries: secrets and privileged tokens remain outside the renderer, sessions use secure cookies, protected repository requests verify access, and permissions are granted incrementally for the feature being implemented. Read-only access is sufficient for browsing; any future local/remote write workflow requires a documented Git-engine architecture and explicit least-privilege review. Handle logout, expiry, revocation, denial, conflicts, and insufficient permissions. Inspect the actual IWSDK/Vite app and deployment structure before choosing where auth or Git services run.
 
 ## Project-wide reminders
 

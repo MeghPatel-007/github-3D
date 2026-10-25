@@ -46,3 +46,4 @@ pids/
 
 .vercel
 .env*
+!.env.example

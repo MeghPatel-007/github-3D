@@ -18,11 +18,11 @@ Example names only; the actual provider and session design may change.
 
 ```dotenv
 NODE_ENV=development
-WEB_ORIGIN=http://localhost:5173
-API_ORIGIN=http://localhost:3000
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-SESSION_SECRET=
+WEB_ORIGIN=https://localhost:8081
+GITHUB_APP_CLIENT_ID=
+GITHUB_APP_CLIENT_SECRET=
+GITHUB_APP_SLUG=
+GITHUB_APP_CALLBACK_URL=
 SESSION_COOKIE_NAME=gh3d_session
 LOG_LEVEL=info
 ```
@@ -37,20 +37,19 @@ Rules:
 
 ## 3. Local development
 
-Suggested commands; adjust to the actual package manager and scripts.
+Use Bun only. `bun.lock` is authoritative; do not use npm, npx, pnpm, or Yarn.
 
 ```bash
 bun install
 bun run dev
 bun run typecheck
-bun run lint
-bun test
+bun run test
 bun run build
 ```
 
 Provide a README with:
 1. Required Node.js version.
-2. Package manager and install command.
+2. Bun version and `bun install` command.
 3. GitHub OAuth app setup instructions.
 4. Environment variable setup.
 5. Local callback URL configuration.

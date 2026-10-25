@@ -1,0 +1,20 @@
+{
+  "id": "TASK-15",
+  "title": "Verify the complete supported desktop-style workflow",
+  "category": "release-readiness",
+  "description": "Close the release gate with end-to-end evidence, security/accessibility checks, and an accurate capability matrix for the implemented GitHub 3D client.",
+  "acceptanceCriteria": [
+    "Automated or documented evidence covers sign-in, repository create/open/clone, branch operations, diffs, staging, commit, sync, conflict recovery, history, pull-request context, and 3D/2D workflow consistency for supported behavior.",
+    "Credential handling, permission denial/revocation, destructive actions, local data retention, and logging are reviewed against the threat model.",
+    "Performance and accessibility targets are measured on representative environments and known limits are recorded.",
+    "The product docs and README distinguish implemented capabilities from deferred or unsupported ones; no unsupported parity claim remains."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Build the workflow acceptance matrix", "details": "Map each FR-GIT requirement to implementation and evidence." },
+    { "step": 2, "pass": false, "description": "Run required automated and runtime checks", "details": "Follow project testing and IWSDK runtime procedures; do not fabricate evidence." },
+    { "step": 3, "pass": false, "description": "Document release status and remaining gaps", "details": "Update docs and product capability wording to match verified behavior." }
+  ],
+  "dependencies": ["TASK-3", "TASK-4", "TASK-5", "TASK-6", "TASK-7", "TASK-8", "TASK-9", "TASK-10", "TASK-11", "TASK-12", "TASK-13", "TASK-14"],
+  "estimatedComplexity": "high",
+  "technicalNotes": ["A full release gate may require this task to be split into smaller test tasks before implementation.", "Do not deploy, publish, or push without explicit authorization."]
+}

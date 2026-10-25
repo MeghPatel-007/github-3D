@@ -1,0 +1,20 @@
+{
+  "id": "TASK-5",
+  "title": "Create, open, and clone real Git workspaces",
+  "category": "git-workspace",
+  "description": "Implement local repository creation and repository open/clone lifecycle using the engine selected in TASK-2, with truthful progress and persistent workspace identity.",
+  "acceptanceCriteria": [
+    "A user can initialize a local repository, open an existing supported workspace, or clone an authorized remote into a new workspace.",
+    "The app reports actual Git repository, remote, HEAD, default branch, and workspace status from the selected engine.",
+    "Clone/open failures and cancellation boundaries do not silently lose existing user data.",
+    "Workspace lifecycle and persistence behavior match the architecture decision and have focused tests."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Read the approved Git-engine decision", "details": "Follow its platform, persistence, auth, and deployment boundaries." },
+    { "step": 2, "pass": false, "description": "Implement create/open/clone lifecycle", "details": "Use real Git operations and observable progress; do not simulate results." },
+    { "step": 3, "pass": false, "description": "Verify lifecycle behavior", "details": "Test success, invalid remote, interrupted operation, and existing-data protection." }
+  ],
+  "dependencies": ["TASK-2", "TASK-4"],
+  "estimatedComplexity": "high",
+  "technicalNotes": ["Never execute repository-provided scripts during clone/open.", "Do not store secrets in the workspace or renderer."]
+}

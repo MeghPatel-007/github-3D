@@ -1,0 +1,20 @@
+{
+  "id": "TASK-7",
+  "title": "Show working-tree changes and accurate diffs",
+  "category": "git-workspace",
+  "description": "Present changed files and staged/unstaged diffs from the real Git workspace in a readable, revision-aware review surface.",
+  "acceptanceCriteria": [
+    "Untracked, added, modified, renamed, and deleted files are distinguished from Git status data.",
+    "Staged and unstaged changes are shown separately with accurate text diffs.",
+    "Binary, oversized, and unsupported content is identified rather than rendered misleadingly.",
+    "Selecting a changed file synchronizes the diff, inspector, tree, and 3D selection."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect status and diff contracts", "details": "Read the selected Git-engine decision and UI state contracts." },
+    { "step": 2, "pass": false, "description": "Implement change list and diff review", "details": "Bound large data and keep source content escaped." },
+    { "step": 3, "pass": false, "description": "Test status and diff correctness", "details": "Cover staged/unstaged, rename/delete, binary, and stale-state cases." }
+  ],
+  "dependencies": ["TASK-5"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["The displayed diff must come from the Git engine, not inferred scene metadata."]
+}

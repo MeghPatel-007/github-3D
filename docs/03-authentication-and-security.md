@@ -35,7 +35,7 @@ Use PKCE where supported by the selected authorization flow. Follow current GitH
 
 ## 4. Permission strategy
 
-Start with the least privilege required to identify the user and list repositories the user has chosen to make accessible. Add private repository content access only when that feature is intentionally enabled and its permission requirements have been reviewed.
+Use least privilege for the feature currently being used. Read access is sufficient for the initial repository-exploration milestone. The complete desktop-style target also includes local Git changes and remote writes, so adding commit/push or other write workflows requires an explicit permission review, a clear user authorization step, and server-side enforcement before those features ship. Do not request write permissions early just because they are on the roadmap.
 
 The UI must clearly distinguish:
 - Public repository imported by URL.
@@ -43,7 +43,7 @@ The UI must clearly distinguish:
 - Repository inaccessible because of permissions or organization policy.
 - Authorization revoked or expired.
 
-Do not ask for write access unless a future feature actually writes to GitHub. The initial product is read-only.
+Do not ask for write access until a shipped feature actually needs it. Read-only exploration is an early milestone; it is not the product's final scope. For every write-capable feature, document the exact GitHub App permission or OAuth scope, limit it to the required repositories and actions, and test denial/revocation behavior.
 
 ## 5. Repository URL validation
 

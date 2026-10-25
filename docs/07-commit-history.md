@@ -1,8 +1,8 @@
-# 07 — Commit History (Post-MVP)
+# 07 — Commit History and Revision Comparison
 
 ## 1. Goal
 
-Let users navigate a repository's evolution as a visual timeline and compare structural changes between revisions. This feature is intentionally deferred until current-revision exploration is reliable.
+Let users navigate a repository's evolution as a visual timeline and compare structural changes between revisions. History is part of the complete GitHub Desktop-style product target, after reliable repository and working-tree operations are in place. Its later sequencing does not make it out of scope.
 
 ## 2. Requirements
 

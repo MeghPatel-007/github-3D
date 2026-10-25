@@ -1,0 +1,20 @@
+{
+  "id": "TASK-6",
+  "title": "Add safe branch management",
+  "category": "git-workspace",
+  "description": "Show and manage branches using real Git state, protecting the user's working tree during checkout and deletion.",
+  "acceptanceCriteria": [
+    "The UI lists current/local/remote branches and accurately identifies the checked-out branch and upstream.",
+    "Users can create and switch branches; rename/delete operations follow the approved engine and remote policy.",
+    "Unsafe checkout or branch deletion is blocked or confirmed without overwriting uncommitted work.",
+    "Branch state refreshes in the 2D controls and 3D workspace and is covered by focused tests."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect Git-engine branch APIs", "details": "Use the architecture decision and existing state contracts." },
+    { "step": 2, "pass": false, "description": "Implement branch list and safe actions", "details": "Keep branch changes explicit and report verified results." },
+    { "step": 3, "pass": false, "description": "Verify branch safety and synchronization", "details": "Cover dirty working tree, current branch deletion, and operation failures." }
+  ],
+  "dependencies": ["TASK-5"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Never silently discard or overwrite local modifications."]
+}

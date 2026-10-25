@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "iwsdk dev restart --open --foreground",
     "dev:runtime": "vite",
+    "api": "node server/index.mjs",
     "dev:down": "iwsdk dev down",
     "dev:status": "iwsdk dev status",
     "reference:status": "iwsdk reference status",
     "reference:warmup": "iwsdk reference warmup",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

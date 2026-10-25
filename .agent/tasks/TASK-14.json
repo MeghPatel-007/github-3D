@@ -1,0 +1,20 @@
+{
+  "id": "TASK-14",
+  "title": "Connect Git workflows to the 3D-first workspace",
+  "category": "3d-workspace",
+  "description": "Make the 3D world a useful primary view of real repository and Git state, with complete synchronized 2D controls for precise operations.",
+  "acceptanceCriteria": [
+    "The world reflects repository hierarchy, active branch, working-tree status, and selection from actual workspace data.",
+    "Selection and navigation stay synchronized across 3D, tree, diff, inspector, and status controls.",
+    "Core Git operations remain usable through keyboard-accessible 2D controls when WebGL is unavailable.",
+    "Scene density, reduced motion, camera recovery, and performance budgets are validated on representative workspaces."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Map real Git state into the existing scene model", "details": "Read IWSDK entry and relevant scene/state skills before editing app code." },
+    { "step": 2, "pass": false, "description": "Integrate navigation and operation affordances", "details": "Do not let spatial interactions bypass confirmations or authorization." },
+    { "step": 3, "pass": false, "description": "Verify cross-view consistency and accessibility", "details": "Use the required runtime evidence for UI/scene changes and report limitations." }
+  ],
+  "dependencies": ["TASK-6", "TASK-7", "TASK-8", "TASK-9", "TASK-10", "TASK-11", "TASK-12"],
+  "estimatedComplexity": "high",
+  "technicalNotes": ["Use IWSDK and project-defined skills; do not add a second renderer stack.", "Never claim runtime behavior based on source inspection alone."]
+}

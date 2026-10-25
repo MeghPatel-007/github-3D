@@ -2,13 +2,13 @@
 
 ## 1. Execution strategy
 
-Build a thin vertical slice first: 2D landing → GitHub authentication → repository dashboard → repository import → normalized tree → 3D scene → file inspection. Then add dependency analysis. Avoid implementing all modules in parallel before their interfaces are tested.
+Build a thin vertical slice first: GitHub sign-in → repository selection → 3D workspace → file inspection. Then establish the Git engine/workspace architecture and deliver actual desktop-client workflows in small verified slices. Dependency analysis is valuable but must not displace core Git operations. The first read-only slice is a milestone, not the finished product.
 
 ## 2. Phase 0 — Project foundation
 
 Deliverables:
-- Initialize React + TypeScript + Vite.
-- Configure linting, formatting, type checking, and tests.
+- Preserve the existing IWSDK + TypeScript + Vite foundation and use its project scripts.
+- Keep type checking, tests, and build reproducible from a clean checkout.
 - Establish environment variable conventions.
 - Create app shell, route boundaries, and error handling.
 - Add a sample repository fixture for development without API dependency.
@@ -95,7 +95,55 @@ Exit criteria:
 - No false edges are fabricated.
 - Analysis failure does not block browsing.
 
-## 8. Phase 6 — Demo polish and hardening
+## 8. Phase 6 — Git engine and repository lifecycle
+
+Deliverables:
+- Record an architecture decision for Git execution and workspace storage before implementing writes.
+- Support opening and cloning repositories using a real Git engine.
+- Track working tree, index, HEAD, branches, remotes, and upstream state separately.
+- Provide progress, cancellation boundaries, and recovery for interrupted operations.
+
+Exit criteria:
+- A clean session can open or clone a repository and read actual Git state.
+- Workspace persistence, credential boundaries, and supported platforms are documented.
+- No operation is represented as complete until the Git engine confirms it.
+
+## 9. Phase 7 — Branches and working-tree operations
+
+Deliverables:
+- Create, switch, rename, and safely delete branches.
+- Show changed, untracked, staged, and unstaged files with accurate diffs.
+- Stage/unstage files or supported hunks; confirm discard operations.
+- Create commits from staged changes and report verified commit identity.
+
+Exit criteria:
+- UI state matches real Git state after each operation.
+- Unsafe branch switches and destructive discards protect local work.
+- Commit validation and failure recovery are tested.
+
+## 10. Phase 8 — Remote synchronization and recovery
+
+Deliverables:
+- Fetch, pull, and push with visible progress and verified results.
+- Handle auth expiry, offline/network failures, divergent histories, and merge conflicts.
+- Provide safe continue/abort flows for supported merge or rebase operations.
+
+Exit criteria:
+- A user can commit locally, sync with GitHub, and recover from supported conflicts without silent data loss.
+
+## 11. Phase 9 — History, GitHub context, and 3D integration
+
+Deliverables:
+- Browse commits and compare revision-specific trees/diffs.
+- Add scoped GitHub context such as repository/branch/commit links and explicitly selected pull-request workflows.
+- Reflect branch and working-tree state in the 3D world and synchronize all scene and 2D controls.
+- Keep all essential workflows accessible in the 2D fallback.
+
+Exit criteria:
+- Historical views are revision-correct and clearly separated from current local changes.
+- Core workflows can be completed through the 3D-first experience and the 2D controls.
+
+## 12. Phase 10 — Complete product hardening
 
 Deliverables:
 - Scene visual polish.
@@ -106,20 +154,22 @@ Deliverables:
 - README, architecture docs, and demo script.
 
 Exit criteria:
-- Complete happy path demonstrated from sign-in to code inspection.
-- Key failure paths tested.
-- No critical credential exposure or data-consistency defects.
+- The complete supported Git workflow is demonstrated: sign-in, repository create/open/clone, branch/change review, stage/commit, sync, conflict recovery, history, and pull-request context.
+- Essential workflows work through the 3D-first experience and keyboard-accessible 2D fallback.
+- Key failure paths, permissions, local-data protections, and known support limits are tested and documented.
+- No critical credential exposure, silent data loss, or data-consistency defects remain.
 
-## 9. Post-MVP
+## 13. Later enhancements beyond the core desktop-style gate
 
 - Function/class definitions and references.
-- Commit timeline and structural diff.
 - More languages and resolution rules.
-- Private repository support improvements.
+- Semantic symbol references and call-site tracing.
+- Optional physics interactions after usability validation.
+- Advanced hosted collaboration only after its product scope and permissions are explicit.
 - Persisted recents/preferences.
 - Large-repository optimization and analysis jobs.
 
-## 10. Suggested issue labels
+## 14. Suggested issue labels
 
 - `spec`: requirement clarification
 - `frontend`
@@ -130,6 +180,6 @@ Exit criteria:
 - `analysis`
 - `testing`
 - `performance`
-- `post-mvp`
+- `later-enhancement`
 
-Every implementation task should reference requirement IDs and have explicit acceptance criteria.
+Every implementation task should reference requirement IDs and have explicit acceptance criteria. The complete release gate is the supported Git workflow matrix in `docs/25-implementation-task-breakdown.md`, not merely the first read-only explorer milestone.

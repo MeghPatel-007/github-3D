@@ -1,0 +1,20 @@
+{
+  "id": "TASK-9",
+  "title": "Create commits from staged changes",
+  "category": "git-workspace",
+  "description": "Provide a commit workflow that commits only the staged index and accurately reports author and resulting commit state.",
+  "acceptanceCriteria": [
+    "The user can enter and validate a commit message and create a commit from staged changes only.",
+    "Empty index, invalid identity, hooks/errors, and engine failures produce actionable states without false success.",
+    "Success shows the verified commit SHA and updates branch/history/status consistently.",
+    "Commit author configuration follows the selected architecture and never leaks credentials."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect commit APIs and author identity behavior", "details": "Follow the selected engine's documented commit semantics." },
+    { "step": 2, "pass": false, "description": "Implement commit form and execution", "details": "Keep staged and unstaged changes separate." },
+    { "step": 3, "pass": false, "description": "Test success and failure recovery", "details": "Cover empty index, invalid message/identity, and failed commit." }
+  ],
+  "dependencies": ["TASK-8"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Do not push automatically after committing unless a future explicit product decision adds that behavior."]
+}

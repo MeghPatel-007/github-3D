@@ -4,12 +4,12 @@
 
 **Name:** GitHub 3D  
 **Tagline:** Code as a World  
-**Category:** Developer tools / repository visualization  
+**Category:** Developer tools / 3D Git client  
 **Primary platform:** Desktop-first web application, with responsive 2D fallback.
 
-GitHub 3D gives developers a spatial way to understand a repository. The experience begins with a conventional 2D website and GitHub authentication, continues through a repository dashboard, and then transitions into an interactive 3D environment representing the selected repository.
+GitHub 3D is a fully working, GitHub Desktop-style client whose primary workspace is an interactive 3D representation of a repository. Users sign in, open or clone repositories, manage branches and local changes, review diffs, stage and commit work, synchronize with GitHub, recover from conflicts, and inspect history. These actions must be usable from synchronized 2D controls as well as the 3D workspace.
 
-GitHub remains the source of truth for source code, repository metadata, branches, and commits. GitHub 3D is a visualization and navigation layer on top of that information.
+GitHub is the remote source of truth. The selected Git workspace is authoritative for local branches and uncommitted changes until synchronized. GitHub 3D must use a real Git engine for Git operations; the 3D scene visualizes state and never substitutes for it. The exact engine and workspace-storage architecture must be decided before write operations are implemented.
 
 ## 2. Problem statement
 
@@ -20,26 +20,28 @@ The product should make repository structure explorable while preserving precise
 ## 3. Goals
 
 - Provide a polished, conventional 2D entry point.
-- Let users authenticate through GitHub using least-privilege access.
-- Let users select accessible repositories or import public repositories by URL.
-- Convert a specific repository revision into a navigable 3D scene.
+- Let users authenticate through GitHub using permissions matched to enabled features.
+- Let users discover, open, or clone repositories and see the active local/remote state.
+- Support core desktop Git workflows: branch management, change review, staging, commits, fetch, pull, push, conflict recovery, and history.
+- Make a navigable 3D repository workspace the primary experience, with complete practical 2D controls.
 - Show files and folders accurately.
-- Allow users to inspect source and navigate by path.
+- Allow users to inspect source, navigate by path, and review precise file/hunk diffs.
 - Visualize detected, explainable dependencies.
-- Preserve a useful 2D file-tree fallback.
-- Establish a modular foundation for later symbol-reference and commit-history features.
+- Preserve local work, report operation results truthfully, and provide recovery paths.
+- Establish a modular foundation for progressively broader GitHub Desktop-style workflows.
 
-## 4. Non-goals for the first release
+## 4. Boundaries and phased delivery
 
-- Replacing GitHub hosting, pull requests, issues, or code review.
+- Replacing GitHub hosting, its web product, or its server-side collaboration services.
 - Executing repository code.
 - Runtime call-graph reconstruction.
 - Full semantic analysis for every programming language.
 - Real-time multi-user collaboration.
 - AI-generated explanations.
-- Full commit replay or branch visualization.
 - Production-scale support for every possible repository size.
-- Private repository access without an explicit, secure authorization flow.
+- Any operation that violates GitHub authorization or the user's local permissions.
+
+The full product target includes a practical desktop-client workflow, not exact cloning of GitHub Desktop's proprietary implementation or every visual detail. Requirements are delivered in tested increments. Read-only repository exploration is an early milestone, not the final product.
 
 ## 5. Target users
 
@@ -147,6 +149,22 @@ Failure paths must be handled at every step, including authorization denial, ina
 - **FR-DEP-07:** Provide filters and a legend for relationship types.
 - **FR-DEP-08:** Record analysis limitations and supported language/configuration.
 
+### Core Git client workflows
+
+- **FR-GIT-01:** Open an existing workspace or clone an authorized remote repository and show operation progress and recoverable errors.
+- **FR-GIT-02:** Show the active repository, current branch, upstream, HEAD commit, and sync state from the Git engine.
+- **FR-GIT-03:** List, create, switch, rename, and safely delete local branches; prevent unsafe checkout that would overwrite uncommitted work.
+- **FR-GIT-04:** Show untracked, added, modified, renamed, and deleted files, separating staged from unstaged changes.
+- **FR-GIT-05:** Show accurate file and hunk diffs; identify binary, oversized, and unsupported changes.
+- **FR-GIT-06:** Stage and unstage files or supported hunks. Confirm destructive discard actions and preserve work where recovery is possible.
+- **FR-GIT-07:** Create commits from staged changes only, validate the message, and show the resulting commit identity.
+- **FR-GIT-08:** Fetch, pull, and push with visible progress, authentication recovery, and verified completion states.
+- **FR-GIT-09:** Detect divergent history and merge conflicts; provide supported continue/abort recovery without silently overwriting user work.
+- **FR-GIT-10:** Browse commit history and compare revisions using evidence from the Git engine and GitHub API.
+- **FR-GIT-11:** Open the repository, branch, and commit in GitHub and support creating/opening a pull request for a published branch where authorized; keep hosted collaboration distinct from local Git operations.
+- **FR-GIT-12:** Keep the 3D scene, file tree, status panel, diff, and operation controls synchronized with the same workspace state.
+- **FR-GIT-13:** Keep all essential Git workflows keyboard-operable and available through the 2D interface when WebGL is unavailable.
+
 ### Later feature requirements
 
 - **FR-SYM-01:** Index supported function and class declarations.
@@ -172,8 +190,8 @@ Failure paths must be handled at every step, including authorization denial, ina
 - **NFR-TEST-01:** Unit-test parsing, resolution, and layout independently of WebGL.
 - **NFR-PRIV-01:** Collect and persist only data required for the product's enabled features.
 
-## 9. MVP release gate
+## 9. First usable milestone and final product gate
 
-The MVP is complete only when a user can authenticate, select or import a public repository, load a consistent revision, enter the 3D world, navigate files, inspect source, search paths, and see real dependency edges for the supported language subset. Error states and a 2D fallback must also work.
+The first usable milestone is complete when a user can authenticate, open/import an authorized repository, load a consistent revision, enter the 3D world, navigate files, inspect source, search paths, and see real dependency edges for the supported language subset. Error states and a 2D fallback must work. This milestone does not constitute the finished product.
 
-Commit history, semantic symbol tracing, and extensive language support are post-MVP unless the project explicitly expands its scope.
+The final product gate requires all supported FR-GIT workflows (open/clone, branch management, working-tree status, diff, stage/unstage, commit, fetch/pull/push, conflict recovery, and history) to work against real Git state, with clear authorization, recovery, security, and accessible 2D paths. The 3D workspace must represent that same state and remain useful as the main experience. Each release must publish a tested capability matrix; unsupported behavior must be clearly identified. Symbol tracing, broad language coverage, and advanced hosted collaboration can follow the core Git-client gate.

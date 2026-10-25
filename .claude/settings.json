@@ -20,5 +20,44 @@
       "Skill(iwsdk-ui)"
     ]
   },
-  "enabledMcpjsonServers": ["iwsdk-runtime", "iwsdk-reference", "metavr"]
+  "enabledMcpjsonServers": [
+    "iwsdk-runtime",
+    "iwsdk-reference",
+    "metavr"
+  ],
+  "defaultMode": "acceptEdits",
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $CLAUDE_PROJECT_DIR/.claude/hooks/one-task-guard.js"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $CLAUDE_PROJECT_DIR/.claude/hooks/play-sound.js notification"
+          }
+        ]
+      }
+    ]
+  }
 }

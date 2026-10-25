@@ -1,0 +1,20 @@
+{
+  "id": "TASK-12",
+  "title": "Add commit history and revision comparison",
+  "category": "history",
+  "description": "Make commit history and revision diffs available as a core desktop-style workflow while preserving the current working tree.",
+  "acceptanceCriteria": [
+    "Users can browse paginated commit history and inspect commit metadata and changed paths.",
+    "Comparing revisions uses Git/API evidence and labels added, modified, deleted, and renamed paths only when supported.",
+    "Historical inspection cannot silently replace or mix the active branch's local working-tree state.",
+    "History loading, inaccessible revisions, and pagination failures preserve the current workspace."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Read history and revision consistency contracts", "details": "Use docs/07 and the selected Git-engine architecture." },
+    { "step": 2, "pass": false, "description": "Implement bounded history and compare views", "details": "Keep historical models immutable and separate from local changes." },
+    { "step": 3, "pass": false, "description": "Test revision identity and failure paths", "details": "Cover pagination, changed paths, and return to current branch." }
+  ],
+  "dependencies": ["TASK-9"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Do not infer rename semantics without evidence."]
+}

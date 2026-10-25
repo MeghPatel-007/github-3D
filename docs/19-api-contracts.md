@@ -1,6 +1,6 @@
 # API Contracts
 
-**Status:** Proposed MVP contract  
+**Status:** Proposed read-only repository/API contract for the first milestone; Git workspace operations require a separate contract after D-012  
 **Project:** GitHub 3D: Code as a World
 
 ## 1. Contract principles
@@ -11,6 +11,7 @@
 - Validate request parameters and response payloads at runtime.
 - Never return OAuth client secrets, access tokens, or session internals to the browser.
 - Do not log source contents or credentials by default.
+- These endpoints cover authenticated repository exploration only. They do not implement a local Git index, working tree, commit, or remote synchronization and must not be presented as a substitute for those workflows.
 
 ## 2. Base path and conventions
 

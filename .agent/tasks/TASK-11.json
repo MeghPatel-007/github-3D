@@ -1,0 +1,20 @@
+{
+  "id": "TASK-11",
+  "title": "Recover from merge conflicts safely",
+  "category": "git-workspace",
+  "description": "Detect supported merge conflicts and provide clear resolution, continue, and abort flows without losing the user's work.",
+  "acceptanceCriteria": [
+    "Conflicted paths and operation state come from Git and are clearly identified.",
+    "Users can inspect conflict content and use supported resolution/continue/abort actions.",
+    "Unsupported conflict forms are preserved and explained; no automatic resolution is presented as user-approved.",
+    "Tests cover conflict success, abort, stale state, and failure without destructive cleanup."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Inspect conflict support in the selected engine", "details": "Document supported merge/rebase states and limitations." },
+    { "step": 2, "pass": false, "description": "Implement the bounded conflict recovery workflow", "details": "Do not add AI or silent conflict resolution." },
+    { "step": 3, "pass": false, "description": "Verify preservation and recovery", "details": "Test supported and unsupported conflicts plus abort/continue behavior." }
+  ],
+  "dependencies": ["TASK-10"],
+  "estimatedComplexity": "high",
+  "technicalNotes": ["Never overwrite conflict markers or files without an explicit user action."]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "TASK-4",
+  "title": "Add authenticated repository discovery and selection",
+  "category": "repository-data",
+  "description": "Let an authenticated user find repositories available under the current authorization and open one as the active workspace context.",
+  "acceptanceCriteria": [
+    "Repository results come from the authorized account and support bounded search/pagination.",
+    "Selecting a repository preserves owner/name/default branch and resolves a concrete revision before repository data is shown.",
+    "Loading, empty, inaccessible, rate-limited, and retry states are handled without exposing credentials.",
+    "The active selection is consistent across the dashboard, 2D tree, inspector, and 3D world."
+  ],
+  "steps": [
+    { "step": 1, "pass": false, "description": "Trace the existing repository chooser and API", "details": "Preserve current component and data conventions; read repository and API contracts." },
+    { "step": 2, "pass": false, "description": "Implement authorized discovery and selection", "details": "Keep server-side authorization checks and revision identity." },
+    { "step": 3, "pass": false, "description": "Verify selection and failure states", "details": "Add focused tests for search, pagination, and access errors; run required checks." }
+  ],
+  "dependencies": ["TASK-3"],
+  "estimatedComplexity": "medium",
+  "technicalNotes": ["Do not treat client-provided repository identifiers as authorization proof.", "Do not implement Git write operations here."]
+}
