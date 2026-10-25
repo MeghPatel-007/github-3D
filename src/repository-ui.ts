@@ -1,6 +1,7 @@
 import { buildRepoModel, tinyTsFixture, type RepoFixture } from './repo-model.js';
 import { importPublicRepository, parseGitHubRepositoryUrl, RepositoryApiError } from './repository-api.js';
 import { AuthApiError, beginGitHubSignIn, getAuthConfig, getSession, listRepositories, signOut as signOutFromApp, type AccessibleRepository } from './auth-api.js';
+import { openWorkspace } from './workspace-api.js';
 
 export function mountRepositoryUi(): void {
   const root = document.querySelector<HTMLElement>('#app-root');
@@ -13,7 +14,7 @@ export function mountRepositoryUi(): void {
         <input id="repo-url" type="url" placeholder="https://github.com/owner/repository" autocomplete="url" required>
         <button id="repo-submit" type="submit" disabled>Import public repo</button>
       </form>
-      <div class="repo-auth"><span id="auth-user">Checking sign-in…</span><input id="repo-auth-search" type="search" placeholder="Search your repositories…" aria-label="Search accessible repositories" hidden><select id="repo-picker" aria-label="Accessible repositories" hidden><option value="">Your repositories…</option></select><a id="github-install" href="#" target="_blank" rel="noopener noreferrer" hidden>Install app for private repos</a><button id="github-signin" type="button" disabled>Continue with GitHub</button><button id="github-signout" type="button" hidden>Sign out</button><button id="repo-more" type="button" hidden>More</button><button id="repo-retry" type="button" hidden>Retry repository search</button></div>
+       <div class="repo-auth"><span id="auth-user">Checking sign-in…</span><input id="repo-auth-search" type="search" placeholder="Search your repositories…" aria-label="Search accessible repositories" hidden><select id="repo-picker" aria-label="Accessible repositories" hidden><option value="">Your repositories…</option></select><button id="workspace-open" type="button" hidden>Open workspace</button><button id="workspace-clone" type="button" hidden>Clone workspace</button><button id="workspace-init" type="button" hidden>Initialize workspace</button><a id="github-install" href="#" target="_blank" rel="noopener noreferrer" hidden>Install app for private repos</a><button id="github-signin" type="button" disabled>Continue with GitHub</button><button id="github-signout" type="button" hidden>Sign out</button><button id="repo-more" type="button" hidden>More</button><button id="repo-retry" type="button" hidden>Retry repository search</button></div>
       <div id="repo-status" class="repo-status" role="status" aria-live="polite">Loading demo repository…</div>
     </header>
     <aside class="repo-browser" aria-label="Repository file browser">
@@ -38,12 +39,15 @@ export function mountRepositoryUi(): void {
   const repoAuthSearch = root.querySelector<HTMLInputElement>('#repo-auth-search')!;
   const moreRepos = root.querySelector<HTMLButtonElement>('#repo-more')!;
   const retryRepos = root.querySelector<HTMLButtonElement>('#repo-retry')!;
+  const workspaceButtons = ['#workspace-open', '#workspace-clone', '#workspace-init'].map((selector) => root.querySelector<HTMLButtonElement>(selector)!);
   let fixture: RepoFixture = tinyTsFixture;
   let entries = buildRepoModel(fixture).entries;
   let selectedPath = 'src/index.ts';
   let accessibleRepos: AccessibleRepository[] = [];
   let nextCursor: string | null = null;
   let repositorySearchRequest = 0;
+
+  const setWorkspaceButtons = (visible: boolean, disabled = false) => workspaceButtons.forEach((button) => { button.hidden = !visible; button.disabled = disabled; });
 
   const setStatus = (text: string, error = false) => {
     status.textContent = text;
@@ -124,6 +128,7 @@ export function mountRepositoryUi(): void {
     repoAuthSearch.hidden = true;
     moreRepos.hidden = true;
     retryRepos.hidden = true;
+    setWorkspaceButtons(false);
     authUser.textContent = 'GitHub session expired. Sign in again.';
     accessibleRepos = [];
     repoPicker.replaceChildren(new Option('Your repositories…', ''));
@@ -227,6 +232,7 @@ export function mountRepositoryUi(): void {
   repoPicker.addEventListener('change', async () => {
     const repository = accessibleRepos.find((item) => item.id === repoPicker.value);
     if (!repository) return;
+    setWorkspaceButtons(true);
     repoPicker.disabled = true;
     try {
       applyImportedRepository(await importPublicRepository(repository.owner, repository.name, repository.defaultBranch));
@@ -237,6 +243,22 @@ export function mountRepositoryUi(): void {
       repoPicker.disabled = false;
     }
   });
+
+  workspaceButtons.forEach((button, index) => button.addEventListener('click', async () => {
+    const repository = accessibleRepos.find((item) => item.id === repoPicker.value);
+    if (!repository) return;
+    setWorkspaceButtons(true, true);
+    const action = (['open', 'clone', 'init'] as const)[index];
+    setStatus(`${action === 'clone' ? 'Cloning' : action === 'init' ? 'Initializing' : 'Opening'} workspace…`);
+    try {
+      const workspace = await openWorkspace(repository.owner, repository.name, action);
+      setStatus(`${workspace.repository.owner}/${workspace.repository.name} · ${workspace.currentBranch} · ${workspace.workingTree} · HEAD ${workspace.headSha ?? 'unborn'}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Workspace operation failed.', true);
+    } finally {
+      setWorkspaceButtons(true);
+    }
+  }));
 
   void Promise.all([getAuthConfig(), getSession()]).then(async ([config, session]) => {
     installLink.hidden = !config.installUrl;

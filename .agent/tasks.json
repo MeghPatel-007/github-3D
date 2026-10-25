@@ -32,7 +32,7 @@
     "title": "Open and clone real Git workspaces",
     "category": "git-workspace",
     "specFilePath": ".agent/tasks/TASK-5.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-6",

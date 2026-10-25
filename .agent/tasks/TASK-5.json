@@ -10,9 +10,9 @@
     "Workspace lifecycle and persistence behavior match the architecture decision and have focused tests."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Read the approved Git-engine decision", "details": "Follow its platform, persistence, auth, and deployment boundaries." },
-    { "step": 2, "pass": false, "description": "Implement create/open/clone lifecycle", "details": "Use real Git operations and observable progress; do not simulate results." },
-    { "step": 3, "pass": false, "description": "Verify lifecycle behavior", "details": "Test success, invalid remote, interrupted operation, and existing-data protection." }
+    { "step": 1, "pass": true, "description": "Read the approved Git-engine decision", "details": "Follow its platform, persistence, auth, and deployment boundaries." },
+    { "step": 2, "pass": true, "description": "Implement create/open/clone lifecycle", "details": "Use real Git operations and observable progress; do not simulate results." },
+    { "step": 3, "pass": true, "description": "Verify lifecycle behavior", "details": "Test success, invalid remote, interrupted operation, and existing-data protection." }
   ],
   "dependencies": ["TASK-2", "TASK-4"],
   "estimatedComplexity": "high",

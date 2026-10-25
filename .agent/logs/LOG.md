@@ -45,3 +45,12 @@
 - Added auth coverage for filtered authorized results and invalid search bounds.
 - Focused checks: `bun test tests/auth.test.mjs tests/github-api.test.mjs` passed (13 tests); targeted TypeScript checks passed.
 - Full `bun run typecheck`, `bun run build`, and `bun run test` remain blocked by missing workspace dependencies and pre-existing test-runner failures.
+
+## TASK-5 — Create, open, and clone real Git workspaces
+
+- Added server-managed workspace lifecycle APIs backed by native Git: initialize, resume/open, and atomic clone.
+- Added opaque per-user/repository workspace identity, confirmed branch/HEAD/remote/working-tree snapshots, cancellation cleanup, and overwrite protection.
+- Added a server-only askpass boundary for authorized clone credentials; tokens never enter workspace metadata, remote URLs, or renderer responses.
+- Added workspace API client and authenticated 2D controls for open, clone, and initialize actions.
+- Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (21 tests); native module syntax and `git diff --check` passed.
+- `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.

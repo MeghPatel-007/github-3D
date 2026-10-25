@@ -59,6 +59,17 @@ async function githubJson(path, accessToken) {
   return JSON.parse(new TextDecoder().decode(body));
 }
 
+export async function getRepositoryMetadata(owner, repo, accessToken) {
+  if (!isValidRepositoryPart(owner) || !isValidRepositoryPart(repo)) {
+    const error = new Error('Invalid repository identifier.');
+    error.status = 400;
+    throw error;
+  }
+  const metadata = await githubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, accessToken);
+  if (typeof metadata.default_branch !== 'string' || !metadata.default_branch) throw new Error('GitHub returned invalid repository metadata.');
+  return { owner, name: repo, defaultBranch: metadata.default_branch, private: Boolean(metadata.private), remoteUrl: `https://github.com/${owner}/${repo}.git` };
+}
+
 export async function importPublicRepository({ owner, repo, ref, accessToken }) {
   if (!isValidRepositoryPart(owner) || !isValidRepositoryPart(repo) || (ref !== undefined && (typeof ref !== 'string' || ref.length > 256 || ref.startsWith('-')))) {
     const error = new Error('Invalid repository or revision.');

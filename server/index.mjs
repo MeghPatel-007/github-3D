@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAuthService } from './auth.mjs';
-import { fetchPublicRepositoryFile, importPublicRepository } from './github.mjs';
+import { fetchPublicRepositoryFile, getRepositoryMetadata, importPublicRepository } from './github.mjs';
+import { createWorkspaceService } from './workspace.mjs';
 
 try {
   process.loadEnvFile('.env');
@@ -54,6 +55,9 @@ async function readJson(request) {
 
 export function createApiServer() {
   const auth = createAuthService();
+  const workspaces = createWorkspaceService({
+    repositoryMetadata: (owner, repo, accessToken) => getRepositoryMetadata(owner, repo, accessToken),
+  });
   const withOptionalAccess = async (request, operation) => {
     const session = auth.sessionFor(request);
     if (!session) return operation(undefined);
@@ -120,6 +124,29 @@ export function createApiServer() {
           throw error;
         }
         result = await withOptionalAccess(request, (accessToken) => importPublicRepository({ ...body, accessToken }));
+      } else if (request.method === 'POST' && url.pathname === '/api/v1/workspaces') {
+        route = 'POST /api/v1/workspaces';
+        const session = auth.sessionFor(request);
+        if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
+        assertSameOrigin(request);
+        const body = await readJson(request);
+        if (body == null || typeof body !== 'object' || Array.isArray(body)) throw Object.assign(new Error('Request body must be a JSON object.'), { status: 400 });
+        const operationController = new AbortController();
+        request.once('aborted', () => operationController.abort());
+        result = await workspaces.open({
+          login: session.user.login,
+          owner: body.owner,
+          repo: body.repo,
+          action: body.action,
+          accessToken: await auth.accessTokenFor(session),
+          signal: operationController.signal,
+        });
+      } else if (request.method === 'GET' && url.pathname.startsWith('/api/v1/workspaces/')) {
+        route = 'GET /api/v1/workspaces/:workspaceId';
+        const session = auth.sessionFor(request);
+        if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
+        const id = decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
+        result = await workspaces.snapshot({ login: session.user.login, workspaceId: id });
       } else {
         const match = url.pathname.match(/^\/api\/v1\/repositories\/([^/]+)\/([^/]+)\/contents$/u);
         if (request.method !== 'GET' || !match) {
