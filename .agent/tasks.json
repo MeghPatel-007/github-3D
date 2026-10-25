@@ -1,0 +1,107 @@
+[
+  {
+    "id": "TASK-1",
+    "title": "Test invalid repository import responses",
+    "category": "functional",
+    "specFilePath": ".agent/tasks/TASK-1.json",
+    "passes": true
+  },
+  {
+    "id": "TASK-2",
+    "title": "Choose the Git workspace architecture",
+    "category": "architecture",
+    "specFilePath": ".agent/tasks/TASK-2.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-3",
+    "title": "Complete secure GitHub sign-in and session lifecycle",
+    "category": "authentication",
+    "specFilePath": ".agent/tasks/TASK-3.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-4",
+    "title": "Add authenticated repository discovery and selection",
+    "category": "repository-data",
+    "specFilePath": ".agent/tasks/TASK-4.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-5",
+    "title": "Open and clone real Git workspaces",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-5.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-6",
+    "title": "Add safe branch management",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-6.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-7",
+    "title": "Show working-tree changes and accurate diffs",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-7.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-8",
+    "title": "Implement safe staging and discard actions",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-8.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-9",
+    "title": "Create commits from staged changes",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-9.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-10",
+    "title": "Synchronize branches with GitHub remotes",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-10.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-11",
+    "title": "Recover from merge conflicts safely",
+    "category": "git-workspace",
+    "specFilePath": ".agent/tasks/TASK-11.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-12",
+    "title": "Add commit history and revision comparison",
+    "category": "history",
+    "specFilePath": ".agent/tasks/TASK-12.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-13",
+    "title": "Add pull-request creation and GitHub context",
+    "category": "github-integration",
+    "specFilePath": ".agent/tasks/TASK-13.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-14",
+    "title": "Connect Git workflows to the 3D-first workspace",
+    "category": "3d-workspace",
+    "specFilePath": ".agent/tasks/TASK-14.json",
+    "passes": false
+  },
+  {
+    "id": "TASK-15",
+    "title": "Verify the complete supported desktop-style workflow",
+    "category": "release-readiness",
+    "specFilePath": ".agent/tasks/TASK-15.json",
+    "passes": false
+  }
+]
