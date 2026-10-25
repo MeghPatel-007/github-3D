@@ -139,6 +139,13 @@ function changePaths(paths) {
   return unique;
 }
 
+function commitInput(message, authorName, authorEmail) {
+  if (typeof message !== 'string' || !message.trim() || message.length > 5000 || message.includes('\0')) throw fail('Commit message must contain 1-5000 characters.');
+  if (typeof authorName !== 'string' || !authorName.trim() || authorName.length > 200 || authorName.includes('\0')) throw fail('Commit author name is invalid.');
+  if (typeof authorEmail !== 'string' || authorEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(authorEmail) || authorEmail.includes('\0')) throw fail('Commit author email is invalid.');
+  return { message, authorName, authorEmail };
+}
+
 function boundedDiff(patch, path, staged, metadata = {}) {
   const truncated = patch.length > MAX_DIFF;
   return {
@@ -300,5 +307,24 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return changes({ login, workspaceId: id });
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation };
+  async function commit({ login, workspaceId: id, message, authorName, authorEmail }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    const input = commitInput(message, authorName, authorEmail);
+    const repoPath = join(base, id, 'repository');
+    const status = await runGit(repoPath, ['status', '--porcelain=v1', '--untracked-files=all'], { preserveWhitespace: true });
+    if (!status || !status.split('\n').some((line) => line[0] !== ' ' && line[0] !== '?')) throw fail('Stage at least one change before committing.', 409);
+    try {
+      await runGit(repoPath, ['-c', `user.name=${input.authorName}`, '-c', `user.email=${input.authorEmail}`, 'commit', '-m', input.message], { env: process.env });
+    } catch (error) {
+      throw fail(`Commit failed: ${error.message}`, error.status ?? 502);
+    }
+    const sha = await runGit(repoPath, ['rev-parse', 'HEAD']);
+    return {
+      ...await snapshot({ login, workspaceId: id }),
+      commit: { sha, message: input.message, authorName: input.authorName, authorEmail: input.authorEmail },
+      changes: (await changes({ login, workspaceId: id })).changes,
+    };
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit };
 }

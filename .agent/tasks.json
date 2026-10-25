@@ -60,7 +60,7 @@
     "title": "Create commits from staged changes",
     "category": "git-workspace",
     "specFilePath": ".agent/tasks/TASK-9.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-10",

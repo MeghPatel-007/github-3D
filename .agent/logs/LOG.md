@@ -3,8 +3,8 @@
 `Current Status`
 =================
 **Last Updated:** 2026-10-25
-**Tasks Completed:** 4
-**Current Task:** TASK-4 Complete
+**Tasks Completed:** 9
+**Current Task:** TASK-9 Complete
 
 ----------------------------------------------
 
@@ -79,4 +79,13 @@
 - Native Git checkout and deletion safety remains enforced; dirty checkout, checked-out deletion, and unmerged deletion return explicit conflicts.
 - Added synchronized 2D branch controls and branch state updates to the 3D panel title.
 - Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (22 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+- `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.
+
+## TASK-9 — Create commits from staged changes
+
+- Added validated server-managed commits from staged index only, with per-commit author identity passed to native Git without storing credentials.
+- Added authenticated commit API and accessible 2D form with message, author fields, verified SHA feedback, and confirmed state refresh.
+- Added coverage for staged-only success, empty index, invalid author identity, hook failure, and staged-state recovery.
+- Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (29 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+- Full `bun run test`: 27 passed, 3 failed on pre-existing `ralph-capture` TDZ and Node `.ts` loader failures.
 - `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.

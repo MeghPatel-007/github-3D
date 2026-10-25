@@ -42,6 +42,25 @@ export async function getWorkspace(workspaceId: string): Promise<GitWorkspace> {
   return value;
 }
 
+export interface WorkspaceCommitResult extends GitWorkspace {
+  commit: { sha: string; message: string; authorName: string; authorEmail: string };
+  changes: Array<{ path: string; kind: string; staged: boolean; unstaged: boolean }>;
+}
+
+export async function commitWorkspace(workspaceId: string, message: string, authorName: string, authorEmail: string): Promise<WorkspaceCommitResult> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/commit`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, authorName, authorEmail }),
+  });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | WorkspaceCommitResult | null;
+  if (!response.ok) throw new Error(value && 'error' in value ? value.error?.message ?? 'Commit failed.' : 'Commit failed.');
+  const commit = value && 'commit' in value && value.commit && typeof value.commit === 'object' ? value.commit : null;
+  if (!value || !('id' in value) || typeof value.id !== 'string' || !commit || typeof (commit as { sha?: unknown }).sha !== 'string') throw new Error('Commit response was invalid.');
+  return value;
+}
+
 async function branchRequest(workspaceId: string, method: string, path: string, body?: object): Promise<GitWorkspace> {
   const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/branches${path}`, {
     method,

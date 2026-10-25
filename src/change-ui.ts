@@ -1,13 +1,19 @@
 import { getWorkspaceChanges, getWorkspaceDiff, mutateWorkspaceChanges, type ChangeOperation, type WorkspaceChange } from './change-api.js';
+import { commitWorkspace } from './workspace-api.js';
 
 export function mountChangeReview(root: HTMLElement, workspaceId: string): void {
   const panel = document.createElement('section');
   panel.className = 'change-review';
-  panel.innerHTML = '<h2>Working tree</h2><div class="change-summary" role="status" aria-live="polite"></div><div class="change-list"></div><pre class="change-diff" aria-label="Selected Git diff">Select a changed file.</pre>';
+  panel.innerHTML = '<h2>Working tree</h2><div class="change-summary" role="status" aria-live="polite"></div><form class="commit-form"><label>Commit message<input name="message" required maxlength="5000"></label><label>Author name<input name="authorName" required maxlength="200"></label><label>Author email<input name="authorEmail" type="email" required maxlength="320"></label><button type="submit">Commit staged changes</button></form><div class="change-list"></div><pre class="change-diff" aria-label="Selected Git diff">Select a changed file.</pre>';
   root.querySelector('.repo-browser')?.prepend(panel);
   const summary = panel.querySelector<HTMLElement>('.change-summary')!;
   const list = panel.querySelector<HTMLElement>('.change-list')!;
   const diff = panel.querySelector<HTMLElement>('.change-diff')!;
+  const commitForm = panel.querySelector<HTMLFormElement>('.commit-form')!;
+  const commitMessage = commitForm.elements.namedItem('message') as HTMLInputElement;
+  const commitAuthorName = commitForm.elements.namedItem('authorName') as HTMLInputElement;
+  const commitAuthorEmail = commitForm.elements.namedItem('authorEmail') as HTMLInputElement;
+  const commitButton = commitForm.querySelector<HTMLButtonElement>('button')!;
   const refresh = async () => {
     const result = await getWorkspaceChanges(workspaceId);
     render(result.changes);
@@ -17,6 +23,7 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
     const staged = changes.filter((change) => change.staged).length;
     const unstaged = changes.filter((change) => change.unstaged).length;
     summary.textContent = changes.length ? `${changes.length} changed file${changes.length === 1 ? '' : 's'} · ${staged} staged · ${unstaged} unstaged` : 'Working tree clean.';
+    commitButton.disabled = staged === 0;
     for (const change of changes) {
       const row = document.createElement('div');
       row.className = 'change-entry';
@@ -67,6 +74,22 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
       list.append(row);
     }
   };
+
+  commitForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    commitButton.disabled = true;
+    summary.textContent = 'Creating commit…';
+    try {
+      const result = await commitWorkspace(workspaceId, commitMessage.value, commitAuthorName.value, commitAuthorEmail.value);
+      window.dispatchEvent(new CustomEvent('workspace:branch-state', { detail: result }));
+      commitMessage.value = '';
+      render(result.changes);
+      summary.textContent = `Committed ${result.commit.sha.slice(0, 7)} · ${result.commit.message}`;
+    } catch (error) {
+      summary.textContent = error instanceof Error ? error.message : 'Commit failed.';
+      await refresh().catch(() => undefined);
+    }
+  });
 
   const describe = (value: Awaited<ReturnType<typeof getWorkspaceDiff>>) => {
     if (value.binary) return '[Binary content; text diff not rendered]';

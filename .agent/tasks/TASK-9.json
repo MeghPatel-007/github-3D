@@ -10,9 +10,9 @@
     "Commit author configuration follows the selected architecture and never leaks credentials."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Inspect commit APIs and author identity behavior", "details": "Follow the selected engine's documented commit semantics." },
-    { "step": 2, "pass": false, "description": "Implement commit form and execution", "details": "Keep staged and unstaged changes separate." },
-    { "step": 3, "pass": false, "description": "Test success and failure recovery", "details": "Cover empty index, invalid message/identity, and failed commit." }
+    { "step": 1, "pass": true, "description": "Inspect commit APIs and author identity behavior", "details": "Follow the selected engine's documented commit semantics." },
+    { "step": 2, "pass": true, "description": "Implement commit form and execution", "details": "Keep staged and unstaged changes separate." },
+    { "step": 3, "pass": true, "description": "Test success and failure recovery", "details": "Cover empty index, invalid message/identity, and failed commit." }
   ],
   "dependencies": ["TASK-8"],
   "estimatedComplexity": "medium",

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -182,4 +182,45 @@ test('stages, unstages, and explicitly discards only selected paths', async () =
   await exec('git', ['add', 'added.txt'], { cwd: repoPath });
   state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'discard', paths: ['added.txt'], confirmPaths: ['added.txt'] });
   assert.equal(state.changes.some((change) => change.path === 'added.txt'), false);
+});
+
+test('commits staged changes only and returns confirmed commit state', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'README.md'), 'staged commit\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  await writeFile(join(repoPath, 'unstaged.txt'), 'keep outside commit\n');
+
+  const result = await workspaceService.commit({ login: 'octocat', workspaceId: workspace.id, message: 'Add staged update', authorName: 'Test User', authorEmail: 'test@example.com' });
+  assert.match(result.commit.sha, /^[a-f0-9]{40}$/u);
+  assert.equal(result.headSha, result.commit.sha);
+  assert.equal(result.currentBranch, 'main');
+  assert.equal(result.changes.some((change) => change.path === 'unstaged.txt' && change.unstaged), true);
+  assert.equal(result.changes.some((change) => change.path === 'README.md'), false);
+  assert.equal((await exec('git', ['show', '-s', '--format=%an <%ae>', 'HEAD'], { cwd: repoPath })).stdout.trim(), 'Test User <test@example.com>');
+});
+
+test('rejects empty index and invalid commit identity without changing state', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  await assert.rejects(workspaceService.commit({ login: 'octocat', workspaceId: workspace.id, message: 'No changes', authorName: 'Test User', authorEmail: 'test@example.com' }), { status: 409 });
+  await assert.rejects(workspaceService.commit({ login: 'octocat', workspaceId: workspace.id, message: 'Valid change', authorName: 'Test User', authorEmail: 'not-an-email' }), { status: 400 });
+});
+
+test('reports hook failures without false success and keeps staged changes', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'README.md'), 'blocked commit\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  const hook = join(repoPath, '.git', 'hooks', 'pre-commit');
+  await writeFile(hook, '#!/bin/sh\nprintf "hook rejected commit\\n" >&2\nexit 1\n');
+  await chmod(hook, 0o755);
+  await assert.rejects(workspaceService.commit({ login: 'octocat', workspaceId: workspace.id, message: 'Blocked', authorName: 'Test User', authorEmail: 'test@example.com' }), /Commit failed: hook rejected commit/);
+  const state = await workspaceService.changes({ login: 'octocat', workspaceId: workspace.id });
+  assert.equal(state.changes.find((change) => change.path === 'README.md').staged, true);
 });
