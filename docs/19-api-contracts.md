@@ -201,7 +201,7 @@ Returns the confirmed `GitWorkspace` snapshot: current branch, HEAD, upstream, w
 
 ### `POST /api/v1/workspaces/{workspaceId}/operations`
 
-Accepts an allowlisted operation such as `clone`, `fetch`, `checkout`, `create-branch`, `diff`, `stage`, `unstage`, `discard`, `commit`, `pull`, `push`, `abort-conflict`, or `continue-conflict`. Each operation has a typed payload, idempotency key where applicable, and a progress/result contract. The server reports confirmed Git state after completion or marks the outcome unknown after timeout until reconciliation.
+Accepts an allowlisted synchronization operation: `fetch`, `pull`, or `push`. Remote writes require explicit server-side GitHub authorization with repository `Contents: read and write`; the browser cannot provide or select a token. Pull is fast-forward-only in this release. The server reports confirmed Git state after completion or marks the outcome unknown after timeout until reconciliation. Divergence and authentication failures are recoverable errors.
 
 ### `DELETE /api/v1/workspaces/{workspaceId}`
 

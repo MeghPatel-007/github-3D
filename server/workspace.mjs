@@ -326,5 +326,25 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     };
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit };
+  async function remoteOperation({ login, workspaceId: id, operation, accessToken }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    if (!['fetch', 'pull', 'push'].includes(operation)) throw fail('Unsupported remote operation.');
+    if (!accessToken) throw fail('GitHub authorization is required for remote synchronization.', 403);
+    if (!workspace.currentBranch || workspace.currentBranch === 'HEAD') throw fail('A checked-out branch is required for synchronization.', 409);
+    if (operation !== 'fetch' && workspace.workingTree === 'conflicted') throw fail('Resolve the current conflict before synchronizing.', 409);
+    const repoPath = join(base, id, 'repository');
+    try {
+      if (operation === 'fetch') await runGit(repoPath, ['fetch', '--progress', 'origin'], { env: authEnv(accessToken) });
+      if (operation === 'pull') await runGit(repoPath, ['pull', '--ff-only', '--progress', 'origin', workspace.currentBranch], { env: authEnv(accessToken) });
+      if (operation === 'push') await runGit(repoPath, ['push', '--progress', '--set-upstream', 'origin', workspace.currentBranch], { env: authEnv(accessToken) });
+    } catch (error) {
+      const message = error.message.includes('Not possible to fast-forward') || error.message.includes('non-fast-forward')
+        ? 'Remote and local history diverged. Fetch and choose a recovery path before pulling or pushing.'
+        : error.message;
+      throw fail(`Git ${operation} failed: ${message}`, error.status ?? 502);
+    }
+    return snapshot({ login, workspaceId: id });
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit, remoteOperation };
 }

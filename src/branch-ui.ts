@@ -1,9 +1,9 @@
-import { checkoutBranch, createBranch, deleteBranch, getBranches, renameBranch, type GitWorkspace } from './workspace-api.js';
+import { checkoutBranch, createBranch, deleteBranch, getBranches, renameBranch, synchronizeWorkspace, type GitWorkspace } from './workspace-api.js';
 
 export function mountBranchUi(root: HTMLElement, workspace: GitWorkspace): void {
   const panel = document.createElement('div');
   panel.className = 'branch-controls';
-  panel.innerHTML = '<label for="branch-picker">Branch</label><select id="branch-picker"></select><button type="button" data-branch-action="create">New</button><button type="button" data-branch-action="rename">Rename</button><button type="button" data-branch-action="delete">Delete</button><span class="branch-status" role="status" aria-live="polite"></span>';
+  panel.innerHTML = '<label for="branch-picker">Branch</label><select id="branch-picker"></select><button type="button" data-branch-action="create">New</button><button type="button" data-branch-action="rename">Rename</button><button type="button" data-branch-action="delete">Delete</button><button type="button" data-sync="fetch">Fetch</button><button type="button" data-sync="pull">Pull</button><button type="button" data-sync="push">Push</button><span class="branch-status" role="status" aria-live="polite"></span>';
   root.querySelector('.repo-toolbar')?.append(panel);
   const picker = panel.querySelector<HTMLSelectElement>('#branch-picker')!;
   const status = panel.querySelector<HTMLElement>('.branch-status')!;
@@ -75,5 +75,21 @@ export function mountBranchUi(root: HTMLElement, workspace: GitWorkspace): void 
       await refresh(`Deleted ${name}.`);
     } catch (error) { status.textContent = error instanceof Error ? error.message : 'Branch deletion failed.'; }
   });
+  panel.querySelectorAll<HTMLButtonElement>('[data-sync]').forEach((button) => button.addEventListener('click', async () => {
+    const operation = button.dataset.sync as 'fetch' | 'pull' | 'push';
+    if ((operation === 'pull' || operation === 'push') && !window.confirm(`${operation[0].toUpperCase()}${operation.slice(1)} ${workspace.currentBranch}? Git will confirm the result.`)) return;
+    button.disabled = true;
+    status.textContent = `${operation}ing…`;
+    try {
+      const next = await synchronizeWorkspace(workspace.id, operation);
+      render(next);
+      status.textContent = `${operation} complete · ${next.currentBranch} · ${next.sync.ahead} ahead · ${next.sync.behind} behind`;
+      window.dispatchEvent(new CustomEvent('workspace:branch-state', { detail: next }));
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : `${operation} failed.`;
+    } finally {
+      button.disabled = false;
+    }
+  }));
   void refresh();
 }

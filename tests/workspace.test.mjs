@@ -224,3 +224,47 @@ test('reports hook failures without false success and keeps staged changes', asy
   const state = await workspaceService.changes({ login: 'octocat', workspaceId: workspace.id });
   assert.equal(state.changes.find((change) => change.path === 'README.md').staged, true);
 });
+
+test('fetches, fast-forward pulls, and pushes only after Git confirms remote state', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  const sourcePath = join(root, 'source');
+
+  await writeFile(join(sourcePath, 'remote.txt'), 'remote update\n');
+  await exec('git', ['add', 'remote.txt'], { cwd: sourcePath });
+  await exec('git', ['commit', '-m', 'remote update'], { cwd: sourcePath });
+  await exec('git', ['push'], { cwd: sourcePath });
+  const fetched = await workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'fetch', accessToken: 'test-token' });
+  assert.equal(fetched.sync.behind, 1);
+  const pulled = await workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'pull', accessToken: 'test-token' });
+  assert.equal(pulled.sync.behind, 0);
+  assert.equal(await readFile(join(repoPath, 'remote.txt'), 'utf8'), 'remote update\n');
+
+  await writeFile(join(repoPath, 'local.txt'), 'local update\n');
+  await exec('git', ['add', 'local.txt'], { cwd: repoPath });
+  await exec('git', ['-c', 'user.name=Test User', '-c', 'user.email=test@example.com', 'commit', '-m', 'local update'], { cwd: repoPath });
+  const pushed = await workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'push', accessToken: 'test-token' });
+  assert.equal(pushed.sync.ahead, 0);
+  assert.equal((await exec('git', ['show', 'main:local.txt'], { cwd: remote })).stdout.trim(), 'local update');
+});
+
+test('rejects remote synchronization without authorization and preserves divergence', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  await assert.rejects(workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'fetch' }), { status: 403 });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  const sourcePath = join(root, 'source');
+  await writeFile(join(sourcePath, 'remote.txt'), 'remote\n');
+  await exec('git', ['add', 'remote.txt'], { cwd: sourcePath });
+  await exec('git', ['commit', '-m', 'remote'], { cwd: sourcePath });
+  await exec('git', ['push'], { cwd: sourcePath });
+  await writeFile(join(repoPath, 'local.txt'), 'local\n');
+  await exec('git', ['add', 'local.txt'], { cwd: repoPath });
+  await exec('git', ['-c', 'user.name=Test User', '-c', 'user.email=test@example.com', 'commit', '-m', 'local'], { cwd: repoPath });
+  await workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'fetch', accessToken: 'test-token' });
+  await assert.rejects(workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'pull', accessToken: 'test-token' }), /diverged/u);
+  assert.equal((await workspaceService.snapshot({ login: 'octocat', workspaceId: workspace.id })).workingTree, 'clean');
+});

@@ -42,6 +42,16 @@ export async function getWorkspace(workspaceId: string): Promise<GitWorkspace> {
   return value;
 }
 
+export async function synchronizeWorkspace(workspaceId: string, operation: 'fetch' | 'pull' | 'push'): Promise<GitWorkspace> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/operations`, {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operation }),
+  });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | GitWorkspace | null;
+  if (!response.ok) throw new Error(value && 'error' in value ? value.error?.message ?? `${operation} failed.` : `${operation} failed.`);
+  if (!value || !('id' in value) || typeof value.id !== 'string' || value.operation !== 'idle') throw new Error('Synchronization response was not confirmed.');
+  return value;
+}
+
 export interface WorkspaceCommitResult extends GitWorkspace {
   commit: { sha: string; message: string; authorName: string; authorEmail: string };
   changes: Array<{ path: string; kind: string; staged: boolean; unstaged: boolean }>;

@@ -89,3 +89,10 @@
 - Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (29 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
 - Full `bun run test`: 27 passed, 3 failed on pre-existing `ralph-capture` TDZ and Node `.ts` loader failures.
 - `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.
+
+## TASK-10 — Synchronize branches with GitHub remotes
+
+- Added typed server-managed `fetch`, fast-forward-only `pull`, and authenticated `push` operations with fresh confirmed snapshots.
+- Added explicit remote synchronization controls and recovery messages for missing authorization, conflicts, authentication failures, and divergent history.
+- Documented the required GitHub App `Contents: read and write` authorization boundary; tokens remain server-side.
+- Focused checks: `bun test tests/workspace.test.mjs` passed (14 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.

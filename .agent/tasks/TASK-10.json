@@ -10,9 +10,9 @@
     "Remote write authorization is explicit, narrowly scoped, and tested for denial/revocation."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Review remote/auth architecture and permission scope", "details": "Do not implement until the required write authorization is approved in project specs." },
-    { "step": 2, "pass": false, "description": "Implement fetch, pull, and push flows", "details": "Keep results bound to repository, remote, and branch identity." },
-    { "step": 3, "pass": false, "description": "Test remote failures and verified success", "details": "Cover offline, auth, divergence, and successful synchronization." }
+    { "step": 1, "pass": true, "description": "Review remote/auth architecture and permission scope", "details": "Uses the server-managed workspace and documents explicit Contents read/write authorization for remote synchronization." },
+    { "step": 2, "pass": true, "description": "Implement fetch, pull, and push flows", "details": "Typed operations are bound to the authorized workspace, origin, and checked-out branch; pull is fast-forward-only." },
+    { "step": 3, "pass": true, "description": "Test remote failures and verified success", "details": "Focused tests cover authorization denial, fetch, fast-forward pull, push, and divergent history." }
   ],
   "dependencies": ["TASK-9"],
   "estimatedComplexity": "high",
