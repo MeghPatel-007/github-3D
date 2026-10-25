@@ -148,9 +148,11 @@ export function createApiServer() {
         const commitMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/commit$/u);
         const operationMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/operations$/u);
         const conflictMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/conflicts$/u);
+        const historyMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/history$/u);
+        const compareMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/compare$/u);
         const session = auth.sessionFor(request);
         if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
-        const id = branchMatch ? decodeSegment(branchMatch[1]) : changeActionMatch ? decodeSegment(changeActionMatch[1]) : commitMatch ? decodeSegment(commitMatch[1]) : operationMatch ? decodeSegment(operationMatch[1]) : conflictMatch ? decodeSegment(conflictMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
+        const id = branchMatch ? decodeSegment(branchMatch[1]) : changeActionMatch ? decodeSegment(changeActionMatch[1]) : commitMatch ? decodeSegment(commitMatch[1]) : operationMatch ? decodeSegment(operationMatch[1]) : conflictMatch ? decodeSegment(conflictMatch[1]) : historyMatch ? decodeSegment(historyMatch[1]) : compareMatch ? decodeSegment(compareMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
         if (commitMatch) {
           assertSameOrigin(request);
           if (request.method !== 'POST') throw Object.assign(new Error('Commit method not allowed.'), { status: 405 });
@@ -171,6 +173,14 @@ export function createApiServer() {
             const body = await readJson(request);
             result = await workspaces.conflictOperation({ login: session.user.login, workspaceId: id, operation: body?.operation });
           }
+        } else if (historyMatch) {
+          if (request.method !== 'GET') throw Object.assign(new Error('History method not allowed.'), { status: 405 });
+          route = 'GET /api/v1/workspaces/:workspaceId/history';
+          result = await workspaces.history({ login: session.user.login, workspaceId: id, cursor: url.searchParams.get('cursor') ?? '0', limit: url.searchParams.get('limit') ?? '20' });
+        } else if (compareMatch) {
+          if (request.method !== 'GET') throw Object.assign(new Error('Compare method not allowed.'), { status: 405 });
+          route = 'GET /api/v1/workspaces/:workspaceId/compare';
+          result = await workspaces.compare({ login: session.user.login, workspaceId: id, from: url.searchParams.get('from'), to: url.searchParams.get('to') });
         } else if (changeActionMatch) {
           assertSameOrigin(request);
           const actionId = decodeSegment(changeActionMatch[1]);

@@ -297,3 +297,21 @@ test('exposes merge conflicts and supports explicit abort and continue without o
   assert.equal(continued.conflict.paths.length, 0);
   assert.equal(continued.headSha, await exec('git', ['rev-parse', 'HEAD'], { cwd: repoPath }).then(({ stdout }) => stdout.trim()));
 });
+
+test('reads paginated immutable history and compares revision paths without changing workspace state', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'new.txt'), 'new\n');
+  await exec('git', ['add', 'new.txt'], { cwd: repoPath });
+  await exec('git', ['-c', 'user.name=Test User', '-c', 'user.email=test@example.com', 'commit', '-m', 'add new file'], { cwd: repoPath });
+  const history = await workspaceService.history({ login: 'octocat', workspaceId: workspace.id, limit: 1 });
+  assert.equal(history.items.length, 1);
+  assert.equal(history.items[0].message, 'add new file');
+  assert.equal(history.items[0].paths[0].path, 'new.txt');
+  assert.equal(history.nextCursor, '1');
+  const comparison = await workspaceService.compare({ login: 'octocat', workspaceId: workspace.id, from: 'HEAD~1', to: 'HEAD' });
+  assert.deepEqual(comparison.paths, [{ status: 'A', path: 'new.txt' }]);
+  assert.equal((await workspaceService.snapshot({ login: 'octocat', workspaceId: workspace.id })).headSha, history.items[0].sha);
+});

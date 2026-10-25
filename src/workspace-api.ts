@@ -70,6 +70,21 @@ export async function recoverWorkspaceConflict(workspaceId: string, operation: '
   return value;
 }
 
+export interface WorkspaceCommit { sha: string; author: { name: string; email: string }; date: string; message: string; paths: Array<{ status: string; path: string; oldPath?: string }> }
+export interface WorkspaceHistory { items: WorkspaceCommit[]; nextCursor: string | null }
+export interface WorkspaceComparison { from: string; to: string; paths: Array<{ status: string; path: string }> }
+
+async function workspaceRead<T>(path: string, errorMessage: string): Promise<T> {
+  const response = await fetch(path, { credentials: 'same-origin', cache: 'no-store' });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | T | null;
+  if (!response.ok) throw new Error(value && typeof value === 'object' && 'error' in value ? value.error?.message ?? errorMessage : errorMessage);
+  if (!value) throw new Error(`${errorMessage} response was empty.`);
+  return value as T;
+}
+
+export const getWorkspaceHistory = (workspaceId: string, cursor = '0', limit = 20) => workspaceRead<WorkspaceHistory>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/history?cursor=${encodeURIComponent(cursor)}&limit=${limit}`, 'History unavailable.');
+export const compareWorkspaceRevisions = (workspaceId: string, from: string, to: string) => workspaceRead<WorkspaceComparison>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/compare?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, 'Revision comparison unavailable.');
+
 export interface WorkspaceCommitResult extends GitWorkspace {
   commit: { sha: string; message: string; authorName: string; authorEmail: string };
   changes: Array<{ path: string; kind: string; staged: boolean; unstaged: boolean }>;

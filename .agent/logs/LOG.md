@@ -102,3 +102,9 @@
 - Added Git-derived conflict path and merge/rebase operation detection to workspace snapshots.
 - Added typed conflict inspection plus explicit merge abort and continue endpoints; rebase conflicts remain preserved and unsupported.
 - Focused checks: `bun test tests/workspace.test.mjs` passed (15 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+
+## TASK-12 — Add commit history and revision comparison
+
+- Added bounded cursor-paginated commit history with author/date/message metadata and Git-reported changed paths.
+- Added explicit revision comparison using Git name-status evidence without mutating active workspace state.
+- Focused checks: `bun test tests/workspace.test.mjs` passed (16 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.

@@ -207,6 +207,14 @@ Accepts an allowlisted synchronization operation: `fetch`, `pull`, or `push`. Re
 
 Returns Git-derived conflicted paths and operation state. `POST` accepts only explicit `abort` or `continue` for supported merge conflicts. Rebase conflicts remain untouched and are reported as unsupported; no endpoint resolves files or overwrites conflict markers.
 
+### `GET /api/v1/workspaces/{workspaceId}/history`
+
+Returns bounded, cursor-paginated commit metadata and Git-reported changed paths. Historical results are immutable and do not replace the active working-tree snapshot.
+
+### `GET /api/v1/workspaces/{workspaceId}/compare`
+
+Compares two explicit revisions using Git name-status output. Rename evidence is disabled unless Git reports it; unavailable revisions return an error without changing workspace state.
+
 ### `DELETE /api/v1/workspaces/{workspaceId}`
 
 Closes or deletes a workspace only after explicit confirmation and a clean/retained-work warning. Deletion must never be implied by repository switching.

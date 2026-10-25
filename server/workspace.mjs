@@ -372,5 +372,40 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return conflictSnapshot({ login, workspaceId: id });
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit, remoteOperation, conflictSnapshot, conflictOperation };
+  async function history({ login, workspaceId: id, cursor = '0', limit = 20 }) {
+    await snapshot({ login, workspaceId: id });
+    const offset = Number.parseInt(cursor, 10);
+    const size = Number.parseInt(limit, 10);
+    if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(size) || size < 1 || size > 50) throw fail('Invalid history pagination.');
+    const repoPath = join(base, id, 'repository');
+    const commits = await runGit(repoPath, ['log', `--skip=${offset}`, `-n${size + 1}`, '--format=%H%x1f%an%x1f%ae%x1f%aI%x1f%s', '--name-status']);
+    const records = commits.split('\n').reduce((groups, line) => {
+      if (line.includes('\x1f')) groups.push([line]);
+      else if (line && groups.length) groups.at(-1).push(line);
+      return groups;
+    }, []).map(([header, ...statusLines]) => {
+      const [sha, authorName, authorEmail, date, message] = header.split('\x1f');
+      const paths = statusLines.filter(Boolean).map((line) => {
+        const [status, path, oldPath] = line.split('\t');
+        return { status, path, ...(status === 'R' || status === 'R100' ? { oldPath } : {}) };
+      });
+      return { sha, author: { name: authorName, email: authorEmail }, date, message, paths };
+    });
+    const hasMore = records.length > size;
+    return { items: records.slice(0, size), nextCursor: hasMore ? String(offset + size) : null };
+  }
+
+  async function compare({ login, workspaceId: id, from, to }) {
+    await snapshot({ login, workspaceId: id });
+    if (typeof from !== 'string' || typeof to !== 'string' || !from || !to || from.includes('..') || to.includes('..')) throw fail('Invalid revision comparison.');
+    const repoPath = join(base, id, 'repository');
+    const output = await runGit(repoPath, ['diff', '--name-status', '--no-renames', from, to]);
+    const paths = output.split('\n').filter(Boolean).map((line) => {
+      const [status, path] = line.split('\t');
+      return { status, path };
+    });
+    return { from, to, paths };
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit, remoteOperation, conflictSnapshot, conflictOperation, history, compare };
 }

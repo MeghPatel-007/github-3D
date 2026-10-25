@@ -81,7 +81,7 @@
     "title": "Add commit history and revision comparison",
     "category": "history",
     "specFilePath": ".agent/tasks/TASK-12.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-13",

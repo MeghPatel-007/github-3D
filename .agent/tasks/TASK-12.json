@@ -10,9 +10,9 @@
     "History loading, inaccessible revisions, and pagination failures preserve the current workspace."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Read history and revision consistency contracts", "details": "Use docs/07 and the selected Git-engine architecture." },
-    { "step": 2, "pass": false, "description": "Implement bounded history and compare views", "details": "Keep historical models immutable and separate from local changes." },
-    { "step": 3, "pass": false, "description": "Test revision identity and failure paths", "details": "Cover pagination, changed paths, and return to current branch." }
+    { "step": 1, "pass": true, "description": "Read history and revision consistency contracts", "details": "History and comparisons use the selected server-managed workspace and explicit revisions." },
+    { "step": 2, "pass": true, "description": "Implement bounded history and compare views", "details": "Added paginated immutable commit metadata and evidence-backed name-status comparisons." },
+    { "step": 3, "pass": true, "description": "Test revision identity and failure paths", "details": "Focused tests cover pagination, changed paths, and preservation of active HEAD state." }
   ],
   "dependencies": ["TASK-9"],
   "estimatedComplexity": "medium",
