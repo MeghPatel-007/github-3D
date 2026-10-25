@@ -78,8 +78,9 @@ function authEnv(accessToken) {
   return {
     ...process.env,
     GIT_TERMINAL_PROMPT: '0',
-    GIT_ASKPASS: resolve('server/git-askpass.mjs'),
-    GITHUB_TOKEN: accessToken,
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: bearer ${accessToken}`,
   };
 }
 
