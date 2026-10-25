@@ -52,6 +52,24 @@ export async function synchronizeWorkspace(workspaceId: string, operation: 'fetc
   return value;
 }
 
+export interface ConflictSnapshot extends GitWorkspace { conflict: { paths: string[]; operation: 'merge' | 'unsupported' | 'none' } }
+
+export async function getWorkspaceConflicts(workspaceId: string): Promise<ConflictSnapshot> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/conflicts`, { credentials: 'same-origin', cache: 'no-store' });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | ConflictSnapshot | null;
+  if (!response.ok) throw new Error(value && 'error' in value ? value.error?.message ?? 'Conflict state unavailable.' : 'Conflict state unavailable.');
+  if (!value || !('id' in value) || !value.conflict) throw new Error('Conflict response was invalid.');
+  return value;
+}
+
+export async function recoverWorkspaceConflict(workspaceId: string, operation: 'abort' | 'continue'): Promise<ConflictSnapshot> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/conflicts`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operation }) });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | ConflictSnapshot | null;
+  if (!response.ok) throw new Error(value && 'error' in value ? value.error?.message ?? `Conflict ${operation} failed.` : `Conflict ${operation} failed.`);
+  if (!value || !('id' in value) || !value.conflict) throw new Error('Conflict response was invalid.');
+  return value;
+}
+
 export interface WorkspaceCommitResult extends GitWorkspace {
   commit: { sha: string; message: string; authorName: string; authorEmail: string };
   changes: Array<{ path: string; kind: string; staged: boolean; unstaged: boolean }>;

@@ -203,6 +203,10 @@ Returns the confirmed `GitWorkspace` snapshot: current branch, HEAD, upstream, w
 
 Accepts an allowlisted synchronization operation: `fetch`, `pull`, or `push`. Remote writes require explicit server-side GitHub authorization with repository `Contents: read and write`; the browser cannot provide or select a token. Pull is fast-forward-only in this release. The server reports confirmed Git state after completion or marks the outcome unknown after timeout until reconciliation. Divergence and authentication failures are recoverable errors.
 
+### `GET|POST /api/v1/workspaces/{workspaceId}/conflicts`
+
+Returns Git-derived conflicted paths and operation state. `POST` accepts only explicit `abort` or `continue` for supported merge conflicts. Rebase conflicts remain untouched and are reported as unsupported; no endpoint resolves files or overwrites conflict markers.
+
 ### `DELETE /api/v1/workspaces/{workspaceId}`
 
 Closes or deletes a workspace only after explicit confirmation and a clean/retained-work warning. Deletion must never be implied by repository switching.

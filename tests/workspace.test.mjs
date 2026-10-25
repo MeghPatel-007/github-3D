@@ -268,3 +268,32 @@ test('rejects remote synchronization without authorization and preserves diverge
   await assert.rejects(workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'pull', accessToken: 'test-token' }), /diverged/u);
   assert.equal((await workspaceService.snapshot({ login: 'octocat', workspaceId: workspace.id })).workingTree, 'clean');
 });
+
+test('exposes merge conflicts and supports explicit abort and continue without overwriting files', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  const sourcePath = join(root, 'source');
+  await writeFile(join(sourcePath, 'README.md'), 'remote conflict\n');
+  await exec('git', ['add', 'README.md'], { cwd: sourcePath });
+  await exec('git', ['commit', '-m', 'remote conflict'], { cwd: sourcePath });
+  await exec('git', ['push'], { cwd: sourcePath });
+  await writeFile(join(repoPath, 'README.md'), 'local conflict\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  await exec('git', ['-c', 'user.name=Test User', '-c', 'user.email=test@example.com', 'commit', '-m', 'local conflict'], { cwd: repoPath });
+  await workspaceService.remoteOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'fetch', accessToken: 'test-token' });
+  await exec('git', ['merge', 'origin/main'], { cwd: repoPath }).catch(() => undefined);
+  let conflicts = await workspaceService.conflictSnapshot({ login: 'octocat', workspaceId: workspace.id });
+  assert.deepEqual(conflicts.conflict, { paths: ['README.md'], operation: 'merge' });
+  const aborted = await workspaceService.conflictOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'abort' });
+  assert.deepEqual(aborted.conflict.paths, []);
+  assert.equal(await readFile(join(repoPath, 'README.md'), 'utf8'), 'local conflict\n');
+
+  await exec('git', ['merge', 'origin/main'], { cwd: repoPath }).catch(() => undefined);
+  await writeFile(join(repoPath, 'README.md'), 'resolved\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  const continued = await workspaceService.conflictOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'continue' });
+  assert.equal(continued.conflict.paths.length, 0);
+  assert.equal(continued.headSha, await exec('git', ['rev-parse', 'HEAD'], { cwd: repoPath }).then(({ stdout }) => stdout.trim()));
+});

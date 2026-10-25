@@ -10,9 +10,9 @@
     "Tests cover conflict success, abort, stale state, and failure without destructive cleanup."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Inspect conflict support in the selected engine", "details": "Document supported merge/rebase states and limitations." },
-    { "step": 2, "pass": false, "description": "Implement the bounded conflict recovery workflow", "details": "Do not add AI or silent conflict resolution." },
-    { "step": 3, "pass": false, "description": "Verify preservation and recovery", "details": "Test supported and unsupported conflicts plus abort/continue behavior." }
+    { "step": 1, "pass": true, "description": "Inspect conflict support in the selected engine", "details": "Merge conflicts are supported; rebase conflicts are detected, preserved, and reported as unsupported." },
+    { "step": 2, "pass": true, "description": "Implement the bounded conflict recovery workflow", "details": "Conflict paths come from Git and recovery exposes explicit merge abort or continue actions." },
+    { "step": 3, "pass": true, "description": "Verify preservation and recovery", "details": "Focused tests cover conflict inspection, abort preservation, and resolved continue behavior." }
   ],
   "dependencies": ["TASK-10"],
   "estimatedComplexity": "high",

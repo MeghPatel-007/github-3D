@@ -51,6 +51,8 @@ async function readSnapshot(repoPath, metadata) {
   const status = await runGit(repoPath, ['status', '--porcelain=v1', '--untracked-files=all']).catch(() => '');
   const lines = status ? status.split('\n').filter(Boolean) : [];
   const conflicted = lines.some((line) => line.slice(0, 2).includes('U') || line.startsWith('AA') || line.startsWith('DD'));
+  const mergeHead = await runGit(repoPath, ['rev-parse', '--verify', 'MERGE_HEAD']).catch(() => null);
+  const rebase = await runGit(repoPath, ['rev-parse', '--git-path', 'rebase-merge']).then((path) => readFile(join(repoPath, path.trim(), 'head-name'), 'utf8').then(() => true)).catch(() => false);
   const upstream = await runGit(repoPath, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']).catch(() => null);
   let ahead = 0;
   let behind = 0;
@@ -66,11 +68,11 @@ async function readSnapshot(repoPath, metadata) {
     currentBranch: branch,
     headSha,
     upstreamSha: upstream ? await runGit(repoPath, ['rev-parse', upstream]).catch(() => null) : null,
-    workingTree: conflicted ? 'conflicted' : lines.length ? 'modified' : 'clean',
+    workingTree: conflicted || mergeHead || rebase ? 'conflicted' : lines.length ? 'modified' : 'clean',
     stagedCount: lines.filter((line) => line[0] !== ' ').length,
     unstagedCount: lines.filter((line) => line[1] !== ' ').length,
     sync: { ahead: Number.isFinite(ahead) ? ahead : 0, behind: Number.isFinite(behind) ? behind : 0 },
-    operation: 'idle',
+    operation: conflicted || mergeHead || rebase ? 'conflict' : 'idle',
   };
 }
 
@@ -346,5 +348,29 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return snapshot({ login, workspaceId: id });
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit, remoteOperation };
+  async function conflictSnapshot({ login, workspaceId: id }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    const repoPath = join(base, id, 'repository');
+    const status = await runGit(repoPath, ['status', '--porcelain=v1', '--untracked-files=all'], { preserveWhitespace: true });
+    const paths = status.split('\n').filter((line) => line && (line.slice(0, 2).includes('U') || line.startsWith('AA') || line.startsWith('DD'))).map((line) => line.slice(3));
+    const merge = await runGit(repoPath, ['rev-parse', '--verify', 'MERGE_HEAD']).then(() => true).catch(() => false);
+    const rebase = await runGit(repoPath, ['rev-parse', '--git-path', 'rebase-merge']).then((path) => readFile(join(repoPath, path.trim(), 'head-name'), 'utf8').then(() => true)).catch(() => false);
+    return { ...workspace, conflict: { paths, operation: merge ? 'merge' : rebase ? 'unsupported' : 'none' } };
+  }
+
+  async function conflictOperation({ login, workspaceId: id, operation }) {
+    const current = await conflictSnapshot({ login, workspaceId: id });
+    if (!['abort', 'continue'].includes(operation)) throw fail('Unsupported conflict operation.');
+    if (current.conflict.operation === 'unsupported') throw fail('Rebase conflicts are preserved but unsupported; resolve them with Git before continuing.', 409);
+    if (current.conflict.operation !== 'merge') throw fail('No supported conflict operation is active.', 409);
+    const repoPath = join(base, id, 'repository');
+    try {
+      await runGit(repoPath, ['merge', operation === 'abort' ? '--abort' : '--continue'], { env: { ...process.env, GIT_EDITOR: 'true' } });
+    } catch (error) {
+      throw fail(`Conflict ${operation} failed: ${error.message}`, error.status ?? 409);
+    }
+    return conflictSnapshot({ login, workspaceId: id });
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation, commit, remoteOperation, conflictSnapshot, conflictOperation };
 }

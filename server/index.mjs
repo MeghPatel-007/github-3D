@@ -147,9 +147,10 @@ export function createApiServer() {
         const changeActionMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/changes\/actions$/u);
         const commitMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/commit$/u);
         const operationMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/operations$/u);
+        const conflictMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/conflicts$/u);
         const session = auth.sessionFor(request);
         if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
-        const id = branchMatch ? decodeSegment(branchMatch[1]) : changeActionMatch ? decodeSegment(changeActionMatch[1]) : commitMatch ? decodeSegment(commitMatch[1]) : operationMatch ? decodeSegment(operationMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
+        const id = branchMatch ? decodeSegment(branchMatch[1]) : changeActionMatch ? decodeSegment(changeActionMatch[1]) : commitMatch ? decodeSegment(commitMatch[1]) : operationMatch ? decodeSegment(operationMatch[1]) : conflictMatch ? decodeSegment(conflictMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
         if (commitMatch) {
           assertSameOrigin(request);
           if (request.method !== 'POST') throw Object.assign(new Error('Commit method not allowed.'), { status: 405 });
@@ -162,6 +163,14 @@ export function createApiServer() {
           const body = await readJson(request);
           route = 'POST /api/v1/workspaces/:workspaceId/operations';
           result = await workspaces.remoteOperation({ login: session.user.login, workspaceId: id, operation: body?.operation, accessToken: await auth.accessTokenFor(session) });
+        } else if (conflictMatch) {
+          if (request.method !== 'GET') assertSameOrigin(request);
+          route = 'GET /api/v1/workspaces/:workspaceId/conflicts';
+          if (request.method === 'GET') result = await workspaces.conflictSnapshot({ login: session.user.login, workspaceId: id });
+          else {
+            const body = await readJson(request);
+            result = await workspaces.conflictOperation({ login: session.user.login, workspaceId: id, operation: body?.operation });
+          }
         } else if (changeActionMatch) {
           assertSameOrigin(request);
           const actionId = decodeSegment(changeActionMatch[1]);

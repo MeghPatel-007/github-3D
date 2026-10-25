@@ -96,3 +96,9 @@
 - Added explicit remote synchronization controls and recovery messages for missing authorization, conflicts, authentication failures, and divergent history.
 - Documented the required GitHub App `Contents: read and write` authorization boundary; tokens remain server-side.
 - Focused checks: `bun test tests/workspace.test.mjs` passed (14 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+
+## TASK-11 — Recover from merge conflicts safely
+
+- Added Git-derived conflict path and merge/rebase operation detection to workspace snapshots.
+- Added typed conflict inspection plus explicit merge abort and continue endpoints; rebase conflicts remain preserved and unsupported.
+- Focused checks: `bun test tests/workspace.test.mjs` passed (15 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
