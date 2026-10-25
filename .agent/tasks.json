@@ -18,7 +18,7 @@
     "title": "Complete secure GitHub sign-in and session lifecycle",
     "category": "authentication",
     "specFilePath": ".agent/tasks/TASK-3.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-4",

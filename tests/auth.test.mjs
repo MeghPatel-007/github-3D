@@ -32,6 +32,8 @@ test('GitHub App web flow uses state and PKCE, then stores tokens only in server
   assert.equal(authorizeUrl.searchParams.get('scope'), 'offline_access');
   assert.equal(authorizeUrl.searchParams.has('client_secret'), false);
   assert.ok(String(startResponse.headers.get('Set-Cookie')).includes('HttpOnly'));
+  assert.ok(String(startResponse.headers.get('Set-Cookie')).includes('SameSite=Lax'));
+  assert.ok(String(startResponse.headers.get('Set-Cookie')).includes('Secure'));
 
   const callbackResponse = responseRecorder();
   const redirect = await auth.callback(
@@ -74,6 +76,31 @@ test('OAuth callback rejects mismatched state before exchanging code', async () 
   assert.equal(requests, 0);
 });
 
+test('OAuth denial clears the transaction and returns a safe retry redirect', async () => {
+  let requests = 0;
+  const auth = createAuthService(env, async () => { requests += 1; return Response.json({}); });
+  const started = responseRecorder();
+  const authorizeUrl = await auth.start(started);
+  const state = authorizeUrl.searchParams.get('state');
+  const callbackResponse = responseRecorder();
+  const redirect = await auth.callback(
+    { headers: { cookie: `gh3d_oauth_state=${state}` } },
+    callbackResponse,
+    new URL(`https://localhost:8081/auth/github/callback?state=${state}&error=access_denied`),
+  );
+  assert.equal(redirect.href, 'https://localhost:8081/?auth=denied');
+  assert.equal(requests, 0);
+  assert.ok(callbackResponse.headers.get('Set-Cookie').some((value) => value.startsWith('gh3d_oauth_state=;')));
+  await assert.rejects(
+    auth.callback(
+      { headers: { cookie: `gh3d_oauth_state=${state}` } },
+      responseRecorder(),
+      new URL(`https://localhost:8081/auth/github/callback?state=${state}&code=retry`),
+    ),
+    { status: 400 },
+  );
+});
+
 test('auth remains disabled without GitHub App credentials', async () => {
   const auth = createAuthService({});
   assert.equal(auth.configured, false);
@@ -104,4 +131,28 @@ test('expired GitHub access token refreshes before listing repositories', async 
   await auth.listRepositories(session);
   assert.match(String(requests[2].init.body), /grant_type=refresh_token/u);
   assert.equal(requests[3].init.headers.Authorization, 'Bearer new-access');
+});
+
+test('failed token refresh invalidates the session and requires sign-in again', async () => {
+  const requests = [];
+  const auth = createAuthService(env, async (url, init) => {
+    requests.push({ url: String(url), init });
+    if (requests.length === 1) return Response.json({ access_token: 'old-access', refresh_token: 'old-refresh', expires_in: 0 });
+    if (requests.length === 2) return Response.json({ login: 'octocat' });
+    return Response.json({ error: 'invalid_grant' }, { status: 400 });
+  });
+  const started = responseRecorder();
+  const authorizeUrl = await auth.start(started);
+  const state = authorizeUrl.searchParams.get('state');
+  const callback = responseRecorder();
+  await auth.callback(
+    { headers: { cookie: `gh3d_oauth_state=${state}` } },
+    callback,
+    new URL(`https://localhost:8081/auth/github/callback?state=${state}&code=abc`),
+  );
+  const sessionId = callback.headers.get('Set-Cookie').find((value) => value.startsWith('gh3d_session=')).match(/^gh3d_session=([^;]+)/u)[1];
+  const request = { headers: { cookie: `gh3d_session=${sessionId}` } };
+  const session = auth.sessionFor(request);
+  await assert.rejects(auth.listRepositories(session), { status: 401, message: 'GitHub session expired. Sign in again.' });
+  assert.equal(auth.sessionFor(request), null);
 });

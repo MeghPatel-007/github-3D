@@ -124,8 +124,8 @@ Retrieves commits and changes, builds revision-specific models, and computes str
 These are application API contracts, not GitHub endpoints. Exact payloads should be formalized in implementation.
 
 - `GET /api/session` — current application session state.
-- `POST /api/auth/github/start` — begin authorization.
-- `GET /api/auth/github/callback` — server callback.
+- `GET /auth/github` — begin authorization.
+- `GET /auth/github/callback` — server callback.
 - `POST /api/auth/logout` — end session.
 - `GET /api/repositories?query=...` — list/search repositories visible to the user.
 - `POST /api/repositories/import` — validate and import a public repository URL.
