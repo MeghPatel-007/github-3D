@@ -1,10 +1,10 @@
 import { getWorkspaceChanges, getWorkspaceDiff, mutateWorkspaceChanges, type ChangeOperation, type WorkspaceChange } from './change-api.js';
-import { commitWorkspace } from './workspace-api.js';
+import { commitWorkspace, getWorkspaceConflicts, recoverWorkspaceConflict } from './workspace-api.js';
 
 export function mountChangeReview(root: HTMLElement, workspaceId: string): void {
   const panel = document.createElement('section');
   panel.className = 'change-review';
-  panel.innerHTML = '<h2>Working tree</h2><div class="change-summary" role="status" aria-live="polite"></div><form class="commit-form"><label>Commit message<input name="message" required maxlength="5000"></label><label>Author name<input name="authorName" required maxlength="200"></label><label>Author email<input name="authorEmail" type="email" required maxlength="320"></label><button type="submit">Commit staged changes</button></form><div class="change-list"></div><pre class="change-diff" aria-label="Selected Git diff">Select a changed file.</pre>';
+  panel.innerHTML = '<h2>Working tree</h2><div class="change-summary" role="status" aria-live="polite"></div><div class="conflict-controls" hidden><strong>Merge conflict</strong><span class="conflict-paths"></span><button type="button" data-conflict="abort">Abort merge</button><button type="button" data-conflict="continue">Continue merge</button></div><form class="commit-form"><label>Commit message<input name="message" required maxlength="5000"></label><label>Author name<input name="authorName" required maxlength="200"></label><label>Author email<input name="authorEmail" type="email" required maxlength="320"></label><button type="submit">Commit staged changes</button></form><div class="change-list"></div><pre class="change-diff" aria-label="Selected Git diff">Select a changed file.</pre>';
   root.querySelector('.repo-browser')?.prepend(panel);
   const summary = panel.querySelector<HTMLElement>('.change-summary')!;
   const list = panel.querySelector<HTMLElement>('.change-list')!;
@@ -14,6 +14,14 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
   const commitAuthorName = commitForm.elements.namedItem('authorName') as HTMLInputElement;
   const commitAuthorEmail = commitForm.elements.namedItem('authorEmail') as HTMLInputElement;
   const commitButton = commitForm.querySelector<HTMLButtonElement>('button')!;
+  const conflictControls = panel.querySelector<HTMLElement>('.conflict-controls')!;
+  const conflictPaths = panel.querySelector<HTMLElement>('.conflict-paths')!;
+  const refreshConflicts = async () => {
+    const result = await getWorkspaceConflicts(workspaceId);
+    conflictControls.hidden = result.conflict.operation === 'none';
+    conflictPaths.textContent = result.conflict.operation === 'unsupported' ? 'Rebase conflict unsupported.' : result.conflict.paths.join(', ') || 'All paths resolved; continue or abort.';
+    conflictControls.querySelectorAll<HTMLButtonElement>('button').forEach((button) => { button.disabled = result.conflict.operation !== 'merge'; });
+  };
   const refresh = async () => {
     const result = await getWorkspaceChanges(workspaceId);
     render(result.changes);
@@ -61,6 +69,7 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
           try {
             await mutateWorkspaceChanges(workspaceId, operation, paths, operation === 'discard' ? paths : undefined);
             await refresh();
+            await refreshConflicts();
           } catch (error) {
             summary.textContent = error instanceof Error ? error.message : 'Git change operation failed.';
             await refresh().catch(() => undefined);
@@ -90,6 +99,20 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
       await refresh().catch(() => undefined);
     }
   });
+  conflictControls.querySelectorAll<HTMLButtonElement>('[data-conflict]').forEach((button) => button.addEventListener('click', async () => {
+    const operation = button.dataset.conflict as 'abort' | 'continue';
+    if (!window.confirm(`${operation === 'abort' ? 'Abort' : 'Continue'} merge?`)) return;
+    button.disabled = true;
+    try {
+      await recoverWorkspaceConflict(workspaceId, operation);
+      await refresh();
+      await refreshConflicts();
+    } catch (error) {
+      summary.textContent = error instanceof Error ? error.message : 'Conflict recovery failed.';
+    } finally {
+      button.disabled = false;
+    }
+  }));
 
   const describe = (value: Awaited<ReturnType<typeof getWorkspaceDiff>>) => {
     if (value.binary) return '[Binary content; text diff not rendered]';
@@ -98,5 +121,5 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
     return value.patch || '[No textual changes]';
   };
 
-  void refresh().catch((error) => { summary.textContent = error instanceof Error ? error.message : 'Change review unavailable.'; });
+  void Promise.all([refresh(), refreshConflicts()]).catch((error) => { summary.textContent = error instanceof Error ? error.message : 'Change review unavailable.'; });
 }

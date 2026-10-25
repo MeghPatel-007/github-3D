@@ -115,3 +115,9 @@
 - Creation requires a matching workspace, published clean branch, explicit request details, duplicate detection, and server-held GitHub authorization.
 - Documented the narrow `Pull requests: read and write` permission boundary.
 - Focused checks: `bun test tests/github-api.test.mjs tests/workspace.test.mjs` passed (23 tests); `node --check server/github.mjs server/index.mjs` and `git diff --check` passed.
+
+## TASK-14 — Connect Git workflows to the 3D-first workspace
+
+- Connected confirmed workspace branch, working-tree, staged, and unstaged state to the existing IWSDK repository panel.
+- Added keyboard-accessible 2D conflict recovery controls with explicit abort/continue confirmation.
+- Partial verification only: source changes were inspected, but `bun run typecheck` failed because `tsc` is unavailable and `bun run build` failed because `vite` is unavailable. IWSDK runtime and screenshot evidence could not run.
