@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process';
 import { isValidRepositoryPart } from './github.mjs';
 
 const MAX_OUTPUT = 2_000_000;
+const MAX_DIFF = 200_000;
 
 function workspaceId(login, owner, repo) {
   return createHash('sha256').update(`${login}:${owner}/${repo}`).digest('hex').slice(0, 32);
@@ -37,7 +38,7 @@ function runGit(cwd, args, options = {}) {
     child.once('close', (code, signal) => {
       options.signal?.removeEventListener('abort', abort);
       if (options.signal?.aborted) return reject(fail('Git operation was cancelled.', 499));
-      if (code !== 0) return reject(fail(stderr.trim() || 'Git operation failed.', 502));
+      if (code !== 0 && !options.allowFailure) return reject(fail(stderr.trim() || 'Git operation failed.', 502));
       resolvePromise(stdout.trim());
     });
   });
@@ -111,6 +112,34 @@ function safeRemoteUrl(value, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function parseStatus(output) {
+  const parts = output ? output.split('\0').filter(Boolean) : [];
+  const changes = [];
+  for (let index = 0; index < parts.length; index += 1) {
+    const record = parts[index];
+    const x = record[0];
+    const y = record[1];
+    const path = record.slice(3);
+    const renamed = x === 'R' || y === 'R';
+    const oldPath = renamed ? parts[++index] : undefined;
+    const kind = x === '?' && y === '?' ? 'untracked' : renamed ? 'renamed' : x === 'A' || y === 'A' ? 'added' : x === 'D' || y === 'D' ? 'deleted' : 'modified';
+    changes.push({ path, kind, ...(oldPath ? { oldPath } : {}), staged: x !== ' ' && x !== '?', unstaged: x === '?' || y !== ' ' && y !== '?' });
+  }
+  return changes;
+}
+
+function boundedDiff(patch, path, staged, metadata = {}) {
+  const truncated = patch.length > MAX_DIFF;
+  return {
+    path,
+    staged,
+    binary: metadata.binary === true,
+    unsupported: metadata.binary === true,
+    truncated,
+    patch: truncated ? `${patch.slice(0, MAX_DIFF)}\n[Diff truncated at ${MAX_DIFF} characters]` : patch,
+  };
 }
 
 export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), repositoryMetadata, gitRunner = runGit } = {}) {
@@ -211,5 +240,23 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return branchSnapshot({ login, workspaceId: id });
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation };
+  async function changes({ login, workspaceId: id }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    const output = await runGit(join(base, id, 'repository'), ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
+    return { ...workspace, changes: parseStatus(output) };
+  }
+
+  async function diff({ login, workspaceId: id, path, staged = false }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    if (typeof path !== 'string' || !path || path.startsWith('/') || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) throw fail('Invalid change path.');
+    const repoPath = join(base, id, 'repository');
+    const args = ['diff', '--no-ext-diff', '--binary', '--unified=3', ...(staged ? ['--cached'] : []), '--', path];
+    let patch = await runGit(repoPath, args).catch(() => '');
+    if (!patch && !staged) patch = await runGit(repoPath, ['diff', '--no-ext-diff', '--binary', '--no-index', '--unified=3', '/dev/null', `./${path}`], { allowFailure: true }).catch(() => '');
+    const numstat = await runGit(repoPath, ['diff', ...(staged ? ['--cached'] : []), '--numstat', '--', path]).catch(() => '');
+    const binary = numstat.split('\n').some((line) => line.startsWith('-\t-\t')) || await readFile(join(repoPath, path)).then((value) => value.includes(0)).catch(() => false);
+    return boundedDiff(patch, path, staged, { binary });
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff };
 }

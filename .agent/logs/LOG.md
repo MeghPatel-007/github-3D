@@ -55,6 +55,15 @@
 - Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (21 tests); native module syntax and `git diff --check` passed.
 - `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.
 
+## TASK-7 — Show working-tree changes and accurate diffs
+
+- Added server-managed Git status and diff endpoints using porcelain status and Git-generated patches.
+- Distinguished untracked, added, modified, renamed, and deleted paths; separated staged and unstaged diffs.
+- Bounded diff output and identified binary or unsupported content without rendering binary bytes as source.
+- Added synchronized 2D change review controls that select the existing tree and 3D repository selection event.
+- Focused checks: `bun test tests/workspace.test.mjs` passed (8 tests); server syntax and `git diff --check` passed.
+- Full `bun run test` remains blocked by the existing `ralph-capture` failure and Node `.ts` loading failures (22 passed, 3 failed); `bun run typecheck` and `bun run build` remain blocked because `tsc` and `vite` are unavailable.
+
 ## TASK-6 — Add safe branch management
 
 - Added real local and remote branch listing with current-branch and upstream metadata.

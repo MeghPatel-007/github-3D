@@ -105,3 +105,54 @@ test('lists branches and protects dirty checkout, current deletion, and unmerged
   await exec('git', ['commit', '-m', 'feature'], { cwd: repoPath });
   await assert.rejects(workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'delete', name: 'feature/renamed' }), { status: 409 });
 });
+
+test('reports Git status kinds and separate bounded staged and unstaged diffs', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'README.md'), 'staged change\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  await writeFile(join(repoPath, 'README.md'), 'unstaged change\n');
+  await writeFile(join(repoPath, 'new.txt'), 'untracked\n');
+
+  const state = await workspaceService.changes({ login: 'octocat', workspaceId: workspace.id });
+  assert.deepEqual(state.changes.map(({ path, kind, staged, unstaged }) => ({ path, kind, staged, unstaged })), [
+    { path: 'README.md', kind: 'modified', staged: true, unstaged: true },
+    { path: 'new.txt', kind: 'untracked', staged: false, unstaged: true },
+  ]);
+  const staged = await workspaceService.diff({ login: 'octocat', workspaceId: workspace.id, path: 'README.md', staged: true });
+  const unstaged = await workspaceService.diff({ login: 'octocat', workspaceId: workspace.id, path: 'README.md', staged: false });
+  assert.match(staged.patch, /staged change/u);
+  assert.doesNotMatch(staged.patch, /unstaged change/u);
+  assert.match(unstaged.patch, /unstaged change/u);
+  assert.match(unstaged.patch, /-staged change/u);
+  const untracked = await workspaceService.diff({ login: 'octocat', workspaceId: workspace.id, path: 'new.txt', staged: false });
+  assert.match(untracked.patch, /untracked/u);
+});
+
+test('identifies binary changes without rendering binary bytes as text', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'image.bin'), Buffer.from([0, 1, 2, 3]));
+  const diff = await workspaceService.diff({ login: 'octocat', workspaceId: workspace.id, path: 'image.bin', staged: false });
+  assert.equal(diff.binary, true);
+  assert.equal(diff.unsupported, true);
+  assert.equal(diff.patch.includes('\u0000'), false);
+});
+
+test('distinguishes renamed and deleted paths from Git status', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await exec('git', ['mv', 'README.md', 'renamed.md'], { cwd: repoPath });
+  const renamed = await workspaceService.changes({ login: 'octocat', workspaceId: workspace.id });
+  assert.deepEqual(renamed.changes[0], { path: 'renamed.md', kind: 'renamed', oldPath: 'README.md', staged: true, unstaged: false });
+  await exec('git', ['rm', '-f', 'renamed.md'], { cwd: repoPath });
+  const deleted = await workspaceService.changes({ login: 'octocat', workspaceId: workspace.id });
+  assert.equal(deleted.changes[0].kind, 'deleted');
+  assert.equal(['README.md', 'renamed.md'].includes(deleted.changes[0].path), true);
+});

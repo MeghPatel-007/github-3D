@@ -3,6 +3,7 @@ import { importPublicRepository, parseGitHubRepositoryUrl, RepositoryApiError } 
 import { AuthApiError, beginGitHubSignIn, getAuthConfig, getSession, listRepositories, signOut as signOutFromApp, type AccessibleRepository } from './auth-api.js';
 import { openWorkspace } from './workspace-api.js';
 import { mountBranchUi } from './branch-ui.js';
+import { mountChangeReview } from './change-ui.js';
 
 export function mountRepositoryUi(): void {
   const root = document.querySelector<HTMLElement>('#app-root');
@@ -255,6 +256,8 @@ export function mountRepositoryUi(): void {
       const workspace = await openWorkspace(repository.owner, repository.name, action);
       setStatus(`${workspace.repository.owner}/${workspace.repository.name} · ${workspace.currentBranch} · ${workspace.workingTree} · HEAD ${workspace.headSha ?? 'unborn'}`);
       mountBranchUi(root, workspace);
+      root.querySelector('.change-review')?.remove();
+      mountChangeReview(root, workspace.id);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Workspace operation failed.', true);
     } finally {

@@ -143,10 +143,21 @@ export function createApiServer() {
         });
       } else if (url.pathname.startsWith('/api/v1/workspaces/')) {
         const branchMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/branches(?:\/([^/]+))?$/u);
+        const changeMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/changes(?:\/diff)?$/u);
         const session = auth.sessionFor(request);
         if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
         const id = branchMatch ? decodeSegment(branchMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
-        if (branchMatch) {
+        if (changeMatch) {
+          const changeId = decodeSegment(changeMatch[1]);
+          if (request.method !== 'GET') assertSameOrigin(request);
+          if (url.pathname.endsWith('/diff')) {
+            route = 'GET /api/v1/workspaces/:workspaceId/changes/diff';
+            result = await workspaces.diff({ login: session.user.login, workspaceId: changeId, path: url.searchParams.get('path'), staged: url.searchParams.get('staged') === 'true' });
+          } else {
+            route = 'GET /api/v1/workspaces/:workspaceId/changes';
+            result = await workspaces.changes({ login: session.user.login, workspaceId: changeId });
+          }
+        } else if (branchMatch) {
           if (request.method !== 'GET') assertSameOrigin(request);
           const branchId = decodeSegment(branchMatch[1]);
           if (request.method === 'GET') {

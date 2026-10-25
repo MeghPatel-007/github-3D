@@ -10,9 +10,9 @@
     "Selecting a changed file synchronizes the diff, inspector, tree, and 3D selection."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Inspect status and diff contracts", "details": "Read the selected Git-engine decision and UI state contracts." },
-    { "step": 2, "pass": false, "description": "Implement change list and diff review", "details": "Bound large data and keep source content escaped." },
-    { "step": 3, "pass": false, "description": "Test status and diff correctness", "details": "Cover staged/unstaged, rename/delete, binary, and stale-state cases." }
+    { "step": 1, "pass": true, "description": "Inspect status and diff contracts", "details": "Read the selected Git-engine decision and UI state contracts." },
+    { "step": 2, "pass": true, "description": "Implement change list and diff review", "details": "Bound large data and keep source content escaped." },
+    { "step": 3, "pass": true, "description": "Test status and diff correctness", "details": "Cover staged/unstaged, rename/delete, binary, and stale-state cases." }
   ],
   "dependencies": ["TASK-5"],
   "estimatedComplexity": "medium",

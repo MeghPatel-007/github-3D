@@ -46,7 +46,7 @@
     "title": "Show working-tree changes and accurate diffs",
     "category": "git-workspace",
     "specFilePath": ".agent/tasks/TASK-7.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-8",
