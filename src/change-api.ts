@@ -32,3 +32,17 @@ export async function getWorkspaceDiff(workspaceId: string, path: string, staged
   if (!response.ok || !value || typeof value.patch !== 'string') throw new Error(value?.error?.message ?? 'Could not read workspace diff.');
   return value;
 }
+
+export type ChangeOperation = 'stage' | 'unstage' | 'discard';
+
+export async function mutateWorkspaceChanges(workspaceId: string, operation: ChangeOperation, paths: string[], confirmPaths?: string[]): Promise<{ changes: WorkspaceChange[] }> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/changes/actions`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ operation, paths, confirmPaths }),
+  });
+  const value = await response.json().catch(() => null) as { changes?: WorkspaceChange[]; error?: { message?: string } } | null;
+  if (!response.ok || !value || !Array.isArray(value.changes)) throw new Error(value?.error?.message ?? 'Git change operation failed.');
+  return { changes: value.changes };
+}

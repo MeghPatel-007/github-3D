@@ -144,10 +144,18 @@ export function createApiServer() {
       } else if (url.pathname.startsWith('/api/v1/workspaces/')) {
         const branchMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/branches(?:\/([^/]+))?$/u);
         const changeMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/changes(?:\/diff)?$/u);
+        const changeActionMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/changes\/actions$/u);
         const session = auth.sessionFor(request);
         if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
         const id = branchMatch ? decodeSegment(branchMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
-        if (changeMatch) {
+        if (changeActionMatch) {
+          assertSameOrigin(request);
+          const actionId = decodeSegment(changeActionMatch[1]);
+          if (request.method !== 'POST') throw Object.assign(new Error('Change action method not allowed.'), { status: 405 });
+          const body = await readJson(request);
+          route = 'POST /api/v1/workspaces/:workspaceId/changes/actions';
+          result = await workspaces.changeOperation({ login: session.user.login, workspaceId: actionId, operation: body?.operation, paths: body?.paths, confirmPaths: body?.confirmPaths });
+        } else if (changeMatch) {
           const changeId = decodeSegment(changeMatch[1]);
           if (request.method !== 'GET') assertSameOrigin(request);
           if (url.pathname.endsWith('/diff')) {

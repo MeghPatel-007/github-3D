@@ -53,7 +53,7 @@
     "title": "Implement safe staging and discard actions",
     "category": "git-workspace",
     "specFilePath": ".agent/tasks/TASK-8.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-9",

@@ -1,4 +1,4 @@
-import { getWorkspaceChanges, getWorkspaceDiff, type WorkspaceChange } from './change-api.js';
+import { getWorkspaceChanges, getWorkspaceDiff, mutateWorkspaceChanges, type ChangeOperation, type WorkspaceChange } from './change-api.js';
 
 export function mountChangeReview(root: HTMLElement, workspaceId: string): void {
   const panel = document.createElement('section');
@@ -8,16 +8,24 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
   const summary = panel.querySelector<HTMLElement>('.change-summary')!;
   const list = panel.querySelector<HTMLElement>('.change-list')!;
   const diff = panel.querySelector<HTMLElement>('.change-diff')!;
+  const refresh = async () => {
+    const result = await getWorkspaceChanges(workspaceId);
+    render(result.changes);
+  };
   const render = (changes: WorkspaceChange[]) => {
     list.replaceChildren();
-    summary.textContent = changes.length ? `${changes.length} changed file${changes.length === 1 ? '' : 's'}` : 'Working tree clean.';
+    const staged = changes.filter((change) => change.staged).length;
+    const unstaged = changes.filter((change) => change.unstaged).length;
+    summary.textContent = changes.length ? `${changes.length} changed file${changes.length === 1 ? '' : 's'} · ${staged} staged · ${unstaged} unstaged` : 'Working tree clean.';
     for (const change of changes) {
+      const row = document.createElement('div');
+      row.className = 'change-entry';
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'change-row';
       button.textContent = `${change.kind} - ${change.path}`;
       button.addEventListener('click', async () => {
-        list.querySelectorAll('button').forEach((item) => item.setAttribute('aria-current', String(item === button)));
+        list.querySelectorAll('.change-row').forEach((item) => item.setAttribute('aria-current', String(item === button)));
         window.dispatchEvent(new CustomEvent('repo:select', { detail: change.path }));
         diff.textContent = 'Loading Git diff...';
         try {
@@ -31,7 +39,32 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
           diff.textContent = error instanceof Error ? error.message : 'Diff unavailable.';
         }
       });
-      list.append(button);
+      row.append(button);
+      const addAction = (label: string, operation: ChangeOperation) => {
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'change-action';
+        action.textContent = label;
+        action.disabled = operation === 'stage' ? !change.unstaged : operation === 'unstage' ? !change.staged : false;
+        action.addEventListener('click', async () => {
+          const paths = [change.path];
+          if (operation === 'discard' && !window.confirm(`Discard changes to ${paths.join(', ')}? This cannot be undone.`)) return;
+          action.disabled = true;
+          summary.textContent = `${operation}ing ${paths.join(', ')}…`;
+          try {
+            await mutateWorkspaceChanges(workspaceId, operation, paths, operation === 'discard' ? paths : undefined);
+            await refresh();
+          } catch (error) {
+            summary.textContent = error instanceof Error ? error.message : 'Git change operation failed.';
+            await refresh().catch(() => undefined);
+          }
+        });
+        row.append(action);
+      };
+      addAction('Stage', 'stage');
+      addAction('Unstage', 'unstage');
+      addAction('Discard', 'discard');
+      list.append(row);
     }
   };
 
@@ -42,5 +75,5 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
     return value.patch || '[No textual changes]';
   };
 
-  void getWorkspaceChanges(workspaceId).then(({ changes }) => render(changes)).catch((error) => { summary.textContent = error instanceof Error ? error.message : 'Change review unavailable.'; });
+  void refresh().catch((error) => { summary.textContent = error instanceof Error ? error.message : 'Change review unavailable.'; });
 }

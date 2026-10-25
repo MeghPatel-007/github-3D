@@ -60,6 +60,8 @@ The approved model is a **server-managed Git workspace**. The backend creates on
 
 This is the first release boundary for clone, branch, diff, stage, commit, fetch, pull, push, and conflict recovery. GitHub remains the remote source of truth, while the workspace is the source of truth for local changes until they are pushed. The renderer and 3D scene remain presentation layers over this state.
 
+Stage, unstage, and discard currently operate on whole files only. Hunk-level changes are not exposed until the Git engine has a reliable patch-splitting implementation. Discard requires explicit confirmation of the exact changed paths and never runs without path-scoped Git arguments.
+
 Browser-local Git/workspace storage was considered because it can reduce server custody and support offline work. It is not selected: browser storage is origin-scoped, browser support for native directory access varies, storage can be evicted, and Quest/WebXR deployments cannot assume access to a user's desktop filesystem. A hybrid browser/server workspace was also rejected for the first release because it duplicates the index and object database and creates difficult conflict, recovery, and synchronization semantics.
 
 The server-managed model requires network access and server capacity, and it does not provide arbitrary local filesystem access or offline commits. Those are explicit limitations, not simulated capabilities. A future native companion could provide local workspaces without changing the web API contract.

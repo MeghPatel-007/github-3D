@@ -10,9 +10,9 @@
     "Tests verify operation results and ensure one action cannot silently discard unrelated changes."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Review Git-engine stage/reset semantics", "details": "Identify any engine limitations and document the smallest safe supported unit." },
-    { "step": 2, "pass": false, "description": "Implement explicit stage/unstage/discard controls", "details": "Keep actions separate from commit and remote synchronization." },
-    { "step": 3, "pass": false, "description": "Verify data-loss safeguards", "details": "Test path scoping, confirmations, stale state, and error recovery." }
+    { "step": 1, "pass": true, "description": "Review Git-engine stage/reset semantics", "details": "Native Git supports reliable file-level add/reset/restore/clean operations; hunk operations remain unavailable and are documented." },
+    { "step": 2, "pass": true, "description": "Implement explicit stage/unstage/discard controls", "details": "Added separate typed server operations, API client calls, and 2D controls." },
+    { "step": 3, "pass": true, "description": "Verify data-loss safeguards", "details": "Exact discard confirmations, stale-path rejection, path-scoped commands, unrelated-change preservation, and error refresh are covered." }
   ],
   "dependencies": ["TASK-7"],
   "estimatedComplexity": "medium",

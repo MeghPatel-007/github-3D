@@ -55,6 +55,14 @@
 - Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (21 tests); native module syntax and `git diff --check` passed.
 - `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.
 
+## TASK-8 — Implement safe staging and discard actions
+
+- Added typed server-managed file-level stage, unstage, and discard operations using native Git `add`, `reset`, `restore`, and `clean` with explicit path scoping.
+- Added exact-path discard confirmation, stale-change rejection, and UI refresh after every operation; hunk operations remain unavailable and are documented as an engine limitation.
+- Fixed porcelain status parsing so leading index-state whitespace is preserved for unstaged changes.
+- Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (26 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+- Full `bun run test` remains blocked by the existing `ralph-capture` failure and Node `.ts` loading failures (24 passed, 3 failed); `bun run typecheck` and `bun run build` remain blocked because `tsc` and `vite` are unavailable.
+
 ## TASK-7 — Show working-tree changes and accurate diffs
 
 - Added server-managed Git status and diff endpoints using porcelain status and Git-generated patches.

@@ -156,3 +156,30 @@ test('distinguishes renamed and deleted paths from Git status', async () => {
   assert.equal(deleted.changes[0].kind, 'deleted');
   assert.equal(['README.md', 'renamed.md'].includes(deleted.changes[0].path), true);
 });
+
+test('stages, unstages, and explicitly discards only selected paths', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await writeFile(join(repoPath, 'README.md'), 'selected change\n');
+  await writeFile(join(repoPath, 'other.txt'), 'keep this change\n');
+
+  let state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'stage', paths: ['README.md'] });
+  assert.deepEqual(state.changes.map(({ path, staged, unstaged }) => ({ path, staged, unstaged })), [
+    { path: 'README.md', staged: true, unstaged: false },
+    { path: 'other.txt', staged: false, unstaged: true },
+  ]);
+  state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'unstage', paths: ['README.md'] });
+  assert.equal(state.changes.find((change) => change.path === 'README.md').staged, false);
+  await assert.rejects(workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'discard', paths: ['README.md'] }), { status: 400 });
+  state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'discard', paths: ['README.md'], confirmPaths: ['README.md'] });
+  assert.equal(state.changes.some((change) => change.path === 'README.md'), false);
+  assert.equal(await readFile(join(repoPath, 'other.txt'), 'utf8'), 'keep this change\n');
+  state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'discard', paths: ['other.txt'], confirmPaths: ['other.txt'] });
+  assert.equal(state.changes.some((change) => change.path === 'other.txt'), false);
+  await writeFile(join(repoPath, 'added.txt'), 'staged new file\n');
+  await exec('git', ['add', 'added.txt'], { cwd: repoPath });
+  state = await workspaceService.changeOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'discard', paths: ['added.txt'], confirmPaths: ['added.txt'] });
+  assert.equal(state.changes.some((change) => change.path === 'added.txt'), false);
+});

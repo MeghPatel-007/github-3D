@@ -39,7 +39,7 @@ function runGit(cwd, args, options = {}) {
       options.signal?.removeEventListener('abort', abort);
       if (options.signal?.aborted) return reject(fail('Git operation was cancelled.', 499));
       if (code !== 0 && !options.allowFailure) return reject(fail(stderr.trim() || 'Git operation failed.', 502));
-      resolvePromise(stdout.trim());
+      resolvePromise(options.preserveWhitespace ? stdout : stdout.trim());
     });
   });
 }
@@ -128,6 +128,15 @@ function parseStatus(output) {
     changes.push({ path, kind, ...(oldPath ? { oldPath } : {}), staged: x !== ' ' && x !== '?', unstaged: x === '?' || y !== ' ' && y !== '?' });
   }
   return changes;
+}
+
+function changePaths(paths) {
+  if (!Array.isArray(paths) || paths.length === 0 || paths.length > 100) throw fail('Select at least one changed path.');
+  const unique = [...new Set(paths)];
+  if (unique.length !== paths.length || unique.some((path) => typeof path !== 'string' || !path || path.startsWith('/') || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..'))) {
+    throw fail('Invalid change path.');
+  }
+  return unique;
 }
 
 function boundedDiff(patch, path, staged, metadata = {}) {
@@ -242,7 +251,7 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
 
   async function changes({ login, workspaceId: id }) {
     const workspace = await snapshot({ login, workspaceId: id });
-    const output = await runGit(join(base, id, 'repository'), ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
+    const output = await runGit(join(base, id, 'repository'), ['status', '--porcelain=v1', '-z', '--untracked-files=all'], { preserveWhitespace: true });
     return { ...workspace, changes: parseStatus(output) };
   }
 
@@ -258,5 +267,38 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return boundedDiff(patch, path, staged, { binary });
   }
 
-  return { open, snapshot, branchSnapshot, branchOperation, changes, diff };
+  async function changeOperation({ login, workspaceId: id, operation, paths, confirmPaths }) {
+    const selected = changePaths(paths);
+    const current = await changes({ login, workspaceId: id });
+    const currentPaths = new Set(current.changes.map((change) => change.path));
+    if (selected.some((path) => !currentPaths.has(path))) throw fail('Workspace changes are stale; refresh and try again.', 409);
+    if (!['stage', 'unstage', 'discard'].includes(operation)) throw fail('Unsupported change operation.');
+    if (operation === 'discard') {
+      if (!Array.isArray(confirmPaths) || confirmPaths.length !== selected.length || new Set(confirmPaths).size !== selected.length || confirmPaths.some((path) => !selected.includes(path))) {
+        throw fail('Discard requires confirmation for every selected path.', 400);
+      }
+    }
+    const repoPath = join(base, id, 'repository');
+    if (operation === 'stage') {
+      await runGit(repoPath, ['add', '--', ...selected]);
+    } else if (operation === 'unstage') {
+      await runGit(repoPath, ['reset', '--', ...selected]);
+    } else {
+      const selectedChanges = current.changes.filter((change) => selected.includes(change.path));
+      const headPaths = await runGit(repoPath, ['ls-tree', '-r', '--name-only', 'HEAD', '--', ...selected], { allowFailure: true });
+      const headTracked = new Set(headPaths.split('\n').filter(Boolean));
+      const restore = selectedChanges.flatMap((change) => [
+        ...(headTracked.has(change.path) ? [change.path] : []),
+        ...(change.oldPath && headTracked.has(change.oldPath) ? [change.oldPath] : []),
+      ]);
+      const remove = selectedChanges.filter((change) => !headTracked.has(change.path)).map((change) => change.path);
+      const reset = selectedChanges.filter((change) => change.staged && !headTracked.has(change.path)).map((change) => change.path);
+      if (reset.length) await runGit(repoPath, ['reset', '--', ...reset]);
+      if (remove.length) await runGit(repoPath, ['clean', '-f', '--', ...remove]);
+      if (restore.length) await runGit(repoPath, ['restore', '--source=HEAD', '--staged', '--worktree', '--', ...new Set(restore)]);
+    }
+    return changes({ login, workspaceId: id });
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation, changes, diff, changeOperation };
 }

@@ -37,6 +37,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid #58d6b1; outline-
 .change-review h2 { margin: 0 0 4px; font-size: 13px; }
 .change-summary { color: #9aa8b6; font-size: 11px; margin-bottom: 4px; }
 .change-list { max-height: 180px; overflow: auto; }
+.change-entry { display: flex; align-items: center; gap: 3px; }
 .change-row { display: block; width: 100%; border: 0; background: transparent; color: #e6edf3; text-align: left; padding: 4px; cursor: pointer; font: 11px monospace; }
 .change-row[aria-current="true"] { background: #1f6feb; }
+.change-action { flex: 0 0 auto; border: 1px solid #303b49; border-radius: 4px; background: #17212b; color: #c9d1d9; padding: 3px 5px; font-size: 10px; cursor: pointer; }
+.change-action:disabled { opacity: .4; cursor: not-allowed; }
 .change-diff { max-height: 220px; overflow: auto; white-space: pre-wrap; color: #cfd8e3; font: 10px monospace; }
