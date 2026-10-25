@@ -43,7 +43,7 @@ The UI must clearly distinguish:
 - Repository inaccessible because of permissions or organization policy.
 - Authorization revoked or expired.
 
-Do not ask for write access until a shipped feature actually needs it. Read-only exploration is an early milestone; it is not the product's final scope. For every write-capable feature, document the exact GitHub App permission or OAuth scope, limit it to the required repositories and actions, and test denial/revocation behavior. Remote synchronization requires explicit GitHub App user authorization with repository `Contents: read and write`; fetch uses read access, while pull and push use the server-held credential only after the user activates that operation.
+Do not ask for write access until a shipped feature actually needs it. Read-only exploration is an early milestone; it is not the product's final scope. For every write-capable feature, document the exact GitHub App permission or OAuth scope, limit it to the required repositories and actions, and test denial/revocation behavior. Remote synchronization requires explicit GitHub App user authorization with repository `Contents: read and write`; fetch uses read access, while pull and push use the server-held credential only after the user activates that operation. Pull-request creation additionally requires `Pull requests: read and write` and is requested only when that feature is enabled.
 
 ## 5. Repository URL validation
 

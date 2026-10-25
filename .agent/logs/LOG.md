@@ -108,3 +108,10 @@
 - Added bounded cursor-paginated commit history with author/date/message metadata and Git-reported changed paths.
 - Added explicit revision comparison using Git name-status evidence without mutating active workspace state.
 - Focused checks: `bun test tests/workspace.test.mjs` passed (16 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+
+## TASK-13 — Add pull-request creation and GitHub context
+
+- Added canonical repository, branch, and commit URL helpers plus a server-mediated pull-request create/open API.
+- Creation requires a matching workspace, published clean branch, explicit request details, duplicate detection, and server-held GitHub authorization.
+- Documented the narrow `Pull requests: read and write` permission boundary.
+- Focused checks: `bun test tests/github-api.test.mjs tests/workspace.test.mjs` passed (23 tests); `node --check server/github.mjs server/index.mjs` and `git diff --check` passed.

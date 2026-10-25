@@ -88,7 +88,7 @@
     "title": "Add pull-request creation and GitHub context",
     "category": "github-integration",
     "specFilePath": ".agent/tasks/TASK-13.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-14",

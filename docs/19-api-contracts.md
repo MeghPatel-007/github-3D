@@ -215,6 +215,10 @@ Returns bounded, cursor-paginated commit metadata and Git-reported changed paths
 
 Compares two explicit revisions using Git name-status output. Rename evidence is disabled unless Git reports it; unavailable revisions return an error without changing workspace state.
 
+### `POST /api/v1/repositories/{owner}/{repo}/pull-requests`
+
+Creates or returns an existing pull request only when the authenticated workspace matches the repository, has a published clean branch, and the user explicitly submits the request. The server requires the narrow GitHub `Pull requests: read and write` permission and never returns credentials.
+
 ### `DELETE /api/v1/workspaces/{workspaceId}`
 
 Closes or deletes a workspace only after explicit confirmation and a clean/retained-work warning. Deletion must never be implied by repository switching.

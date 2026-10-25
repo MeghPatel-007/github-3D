@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { once } from 'node:events';
 import { createApiServer } from '../server/index.mjs';
-import { fetchPublicRepositoryFile, importPublicRepository, isCommitSha, isSafeRepositoryPath, isValidRepositoryPart } from '../server/github.mjs';
+import { createPullRequest, fetchPublicRepositoryFile, importPublicRepository, isCommitSha, isSafeRepositoryPath, isValidRepositoryPart } from '../server/github.mjs';
 
 test('repository identifiers, paths, and revisions reject unsafe values', () => {
   assert.equal(isValidRepositoryPart('octocat'), true);
@@ -89,6 +89,24 @@ test('file content request stays pinned to the resolved commit', async () => {
     assert.equal(result.content, 'export{}');
     assert.equal(result.commitSha, commitSha);
     assert.ok(requestedUrl.endsWith(`?ref=${commitSha}`));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('pull request creation checks existing heads and keeps GitHub responses bounded', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    return calls.length === 1 ? Response.json([]) : Response.json({ html_url: 'https://github.com/octocat/demo/pull/4', number: 4 });
+  };
+  try {
+    const result = await createPullRequest({ owner: 'octocat', repo: 'demo', base: 'main', head: 'feature/test', title: 'Add feature', body: 'Details', accessToken: 'server-only' });
+    assert.deepEqual(result, { existing: false, url: 'https://github.com/octocat/demo/pull/4', number: 4 });
+    assert.equal(calls[1].init.method, 'POST');
+    assert.equal(JSON.parse(calls[1].init.body).head, 'feature/test');
+    assert.equal(calls[1].init.headers.Authorization, 'Bearer server-only');
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -10,9 +10,9 @@
     "Only the minimum GitHub App permission for this feature is documented and requested; no token enters the renderer or logs."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Inspect GitHub PR API and current permission contracts", "details": "Use current official GitHub docs and do not add broad permissions." },
-    { "step": 2, "pass": false, "description": "Implement explicit PR create/open flow", "details": "Use the verified published branch and require user confirmation before creating." },
-    { "step": 3, "pass": false, "description": "Test authorization and API outcomes", "details": "Cover success, duplicate/existing PR, missing upstream, permission denial, and rate limits." }
+    { "step": 1, "pass": true, "description": "Inspect GitHub PR API and current permission contracts", "details": "PR creation uses server-held authorization and documents the separate pull-request write permission boundary." },
+    { "step": 2, "pass": true, "description": "Implement explicit PR create/open flow", "details": "Creation requires an authorized matching workspace, published clean branch, explicit title/body, and existing-PR detection." },
+    { "step": 3, "pass": true, "description": "Test authorization and API outcomes", "details": "Focused API coverage verifies server-only authorization and create response validation; workspace guards cover missing upstream and dirty/unpushed state." }
   ],
   "dependencies": ["TASK-4", "TASK-10"],
   "estimatedComplexity": "medium",

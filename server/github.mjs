@@ -18,11 +18,13 @@ export function isCommitSha(value) {
   return typeof value === 'string' && /^[a-f0-9]{40}$/iu.test(value);
 }
 
-async function githubJson(path, accessToken) {
+async function githubJson(path, accessToken, init = {}) {
   const response = await fetch(`${GITHUB_API}${path}`, {
+    ...init,
     headers: {
       Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10', 'User-Agent': USER_AGENT,
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
     },
     signal: AbortSignal.timeout(15_000),
   });
@@ -57,6 +59,21 @@ async function githubJson(path, accessToken) {
     offset += chunk.byteLength;
   }
   return JSON.parse(new TextDecoder().decode(body));
+}
+
+export async function createPullRequest({ owner, repo, base, head, title, body = '', accessToken }) {
+  if (!isValidRepositoryPart(owner) || !isValidRepositoryPart(repo) || typeof base !== 'string' || !base || typeof head !== 'string' || !head || typeof title !== 'string' || !title.trim() || title.length > 256 || typeof body !== 'string' || body.length > 20_000) {
+    const error = new Error('Invalid pull request details.');
+    error.status = 400;
+    throw error;
+  }
+  const path = `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const existing = await githubJson(`${path}/pulls?state=open&head=${encodeURIComponent(`${owner}:${head}`)}&base=${encodeURIComponent(base)}`, accessToken);
+  if (!Array.isArray(existing)) throw new Error('GitHub returned invalid pull request data.');
+  if (existing[0]?.html_url) return { existing: true, url: existing[0].html_url, number: existing[0].number };
+  const result = await githubJson(`${path}/pulls`, accessToken, { method: 'POST', body: JSON.stringify({ title: title.trim(), body, head, base }) });
+  if (!result || typeof result.html_url !== 'string' || !Number.isInteger(result.number)) throw new Error('GitHub returned an invalid pull request.');
+  return { existing: false, url: result.html_url, number: result.number };
 }
 
 export async function getRepositoryMetadata(owner, repo, accessToken) {

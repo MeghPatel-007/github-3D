@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createAuthService } from './auth.mjs';
-import { fetchPublicRepositoryFile, getRepositoryMetadata, importPublicRepository } from './github.mjs';
+import { createPullRequest, fetchPublicRepositoryFile, getRepositoryMetadata, importPublicRepository } from './github.mjs';
 import { createWorkspaceService } from './workspace.mjs';
 
 try {
@@ -215,6 +215,21 @@ export function createApiServer() {
           result = await workspaces.snapshot({ login: session.user.login, workspaceId: id });
         }
       } else {
+        const pullRequestMatch = url.pathname.match(/^\/api\/v1\/repositories\/([^/]+)\/([^/]+)\/pull-requests$/u);
+        if (request.method === 'POST' && pullRequestMatch) {
+          route = 'POST /api/v1/repositories/:owner/:repo/pull-requests';
+          const session = auth.sessionFor(request);
+          if (!session) throw Object.assign(new Error('Sign in with GitHub to create pull requests.'), { status: 401 });
+          assertSameOrigin(request);
+          const body = await readJson(request);
+          const workspace = await workspaces.snapshot({ login: session.user.login, workspaceId: body?.workspaceId });
+          const owner = decodeSegment(pullRequestMatch[1]);
+          const repo = decodeSegment(pullRequestMatch[2]);
+          if (workspace.repository.owner !== owner || workspace.repository.name !== repo) throw Object.assign(new Error('Workspace does not match the requested repository.'), { status: 409 });
+          if (!workspace.upstreamSha) throw Object.assign(new Error('Publish the current branch before creating a pull request.'), { status: 409 });
+          if (workspace.workingTree !== 'clean' || workspace.sync.ahead > 0) throw Object.assign(new Error('Push and confirm a clean published branch before creating a pull request.'), { status: 409 });
+          result = await createPullRequest({ owner, repo, base: body?.base, head: workspace.currentBranch, title: body?.title, body: body?.body, accessToken: await auth.accessTokenFor(session) });
+        } else {
         const match = url.pathname.match(/^\/api\/v1\/repositories\/([^/]+)\/([^/]+)\/contents$/u);
         if (request.method !== 'GET' || !match) {
           status = 404;
@@ -228,6 +243,7 @@ export function createApiServer() {
             commitSha: url.searchParams.get('sha'),
             accessToken,
           }));
+        }
         }
       }
       response.writeHead(status, { 'Content-Type': 'application/json' }).end(JSON.stringify(result));
