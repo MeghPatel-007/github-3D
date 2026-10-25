@@ -54,6 +54,7 @@ export class RepoExplorerSystem extends createSystem({
   private materials: MeshStandardMaterial[] = [];
   private contentRequest = 0;
   private contentController: AbortController | null = null;
+  private workspaceBranch: string | null = null;
 
   private onRepositoryLoad = (event: Event): void => {
     this.replaceRepository((event as CustomEvent<RepoFixture>).detail);
@@ -80,9 +81,15 @@ export class RepoExplorerSystem extends createSystem({
     window.dispatchEvent(new Event('repo:system-ready'));
     window.addEventListener('repo:load', this.onRepositoryLoad);
     window.addEventListener('repo:select', this.onRepositorySelect);
+    const onBranchState = (event: Event) => {
+      this.workspaceBranch = (event as CustomEvent<{ currentBranch?: string }>).detail.currentBranch ?? null;
+      this.refreshPanelRows();
+    };
+    window.addEventListener('workspace:branch-state', onBranchState);
     this.cleanupFuncs.push(
       () => window.removeEventListener('repo:load', this.onRepositoryLoad),
       () => window.removeEventListener('repo:select', this.onRepositorySelect),
+      () => window.removeEventListener('workspace:branch-state', onBranchState),
       () => this.disposeSceneEntities(),
       this.queries.pressed.subscribe('qualify', (entity) => {
         this.selectPath(entity.getValue(RepoNode, 'path') ?? '');
@@ -299,7 +306,7 @@ export class RepoExplorerSystem extends createSystem({
       });
     });
     const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
-    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${this.model.ref ?? this.model.defaultBranch} @ ${this.model.commitSha.slice(0, 7)}` });
+    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${this.workspaceBranch ?? this.model.ref ?? this.model.defaultBranch} @ ${this.model.commitSha.slice(0, 7)}` });
   }
 
   private loadSource(path: string, commitSha: string): void {

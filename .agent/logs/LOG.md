@@ -54,3 +54,12 @@
 - Added workspace API client and authenticated 2D controls for open, clone, and initialize actions.
 - Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (21 tests); native module syntax and `git diff --check` passed.
 - `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.
+
+## TASK-6 — Add safe branch management
+
+- Added real local and remote branch listing with current-branch and upstream metadata.
+- Added server-managed create, checkout, rename, and non-forced delete operations with branch-name validation and workspace authorization.
+- Native Git checkout and deletion safety remains enforced; dirty checkout, checked-out deletion, and unmerged deletion return explicit conflicts.
+- Added synchronized 2D branch controls and branch state updates to the 3D panel title.
+- Focused checks: `bun test tests/workspace.test.mjs tests/auth.test.mjs tests/github-api.test.mjs tests/repository-api.test.ts` passed (22 tests); `node --check server/workspace.mjs server/index.mjs` and `git diff --check` passed.
+- `bun run typecheck` and `bun run build` blocked because `tsc` and `vite` are unavailable in the installed workspace dependencies.

@@ -141,12 +141,27 @@ export function createApiServer() {
           accessToken: await auth.accessTokenFor(session),
           signal: operationController.signal,
         });
-      } else if (request.method === 'GET' && url.pathname.startsWith('/api/v1/workspaces/')) {
-        route = 'GET /api/v1/workspaces/:workspaceId';
+      } else if (url.pathname.startsWith('/api/v1/workspaces/')) {
+        const branchMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/branches(?:\/([^/]+))?$/u);
         const session = auth.sessionFor(request);
         if (!session) throw Object.assign(new Error('Sign in with GitHub to use workspaces.'), { status: 401 });
-        const id = decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
-        result = await workspaces.snapshot({ login: session.user.login, workspaceId: id });
+        const id = branchMatch ? decodeSegment(branchMatch[1]) : decodeSegment(url.pathname.slice('/api/v1/workspaces/'.length));
+        if (branchMatch) {
+          if (request.method !== 'GET') assertSameOrigin(request);
+          const branchId = decodeSegment(branchMatch[1]);
+          if (request.method === 'GET') {
+            route = 'GET /api/v1/workspaces/:workspaceId/branches';
+            result = await workspaces.branchSnapshot({ login: session.user.login, workspaceId: branchId });
+          } else {
+            const body = await readJson(request);
+            const operation = request.method === 'PATCH' ? 'rename' : request.method === 'DELETE' ? 'delete' : body?.operation;
+            route = `${request.method} /api/v1/workspaces/:workspaceId/branches`;
+            result = await workspaces.branchOperation({ login: session.user.login, workspaceId: branchId, operation, name: body?.name ?? decodeSegment(branchMatch[2] ?? ''), newName: body?.newName, startPoint: body?.startPoint });
+          }
+        } else {
+          route = 'GET /api/v1/workspaces/:workspaceId';
+          result = await workspaces.snapshot({ login: session.user.login, workspaceId: id });
+        }
       } else {
         const match = url.pathname.match(/^\/api\/v1\/repositories\/([^/]+)\/([^/]+)\/contents$/u);
         if (request.method !== 'GET' || !match) {

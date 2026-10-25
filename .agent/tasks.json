@@ -39,7 +39,7 @@
     "title": "Add safe branch management",
     "category": "git-workspace",
     "specFilePath": ".agent/tasks/TASK-6.json",
-    "passes": false
+    "passes": true
   },
   {
     "id": "TASK-7",

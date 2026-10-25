@@ -73,6 +73,23 @@ async function readSnapshot(repoPath, metadata) {
   };
 }
 
+async function readBranches(repoPath) {
+  const current = await runGit(repoPath, ['symbolic-ref', '--quiet', '--short', 'HEAD']).catch(() => null);
+  const list = async (ref, kind) => {
+    const output = await runGit(repoPath, ['for-each-ref', '--format=%(refname:short)\t%(upstream:short)', ref]);
+    return output ? output.split('\n').map((line) => {
+      const [name, upstream = ''] = line.split('\t');
+      return { name, kind, upstream: upstream || null, current: kind === 'local' && name === current };
+    }) : [];
+  };
+  return [...await list('refs/heads', 'local'), ...await list('refs/remotes', 'remote')];
+}
+
+async function validBranchName(repoPath, name) {
+  if (typeof name !== 'string' || name.length === 0 || name.length > 255) throw fail('Invalid branch name.');
+  await runGit(repoPath, ['check-ref-format', '--branch', name]).catch(() => { throw fail('Invalid branch name.'); });
+}
+
 function authEnv(accessToken) {
   if (!accessToken) return process.env;
   return {
@@ -156,5 +173,43 @@ export function createWorkspaceService({ rootDir = resolve('.tmp/workspaces'), r
     return readSnapshot(join(directory, 'repository'), metadata);
   }
 
-  return { open, snapshot };
+  async function branchSnapshot({ login, workspaceId: id }) {
+    const workspace = await snapshot({ login, workspaceId: id });
+    return { ...workspace, branches: await readBranches(join(base, id, 'repository')) };
+  }
+
+  async function branchOperation({ login, workspaceId: id, operation, name, newName, startPoint }) {
+    const current = await snapshot({ login, workspaceId: id });
+    const repoPath = join(base, id, 'repository');
+    if (operation === 'create') {
+      await validBranchName(repoPath, name);
+      await gitRunner(repoPath, ['branch', '--', name, startPoint || 'HEAD'], { env: process.env });
+    } else if (operation === 'checkout') {
+      await validBranchName(repoPath, name);
+      try {
+        await gitRunner(repoPath, ['switch', '--', name], { env: process.env });
+      } catch (error) {
+        throw fail(`Cannot switch to '${name}' without losing local changes.`, 409);
+      }
+    } else if (operation === 'rename') {
+      await validBranchName(repoPath, name);
+      await validBranchName(repoPath, newName);
+      if (name.startsWith('origin/')) throw fail('Remote branches cannot be renamed here.');
+      await gitRunner(repoPath, ['branch', '-m', '--', name, newName], { env: process.env });
+    } else if (operation === 'delete') {
+      await validBranchName(repoPath, name);
+      if (name === current.currentBranch) throw fail('Cannot delete the checked-out branch.', 409);
+      if (name.startsWith('origin/')) throw fail('Remote branches cannot be deleted here.');
+      try {
+        await gitRunner(repoPath, ['branch', '-d', '--', name], { env: process.env });
+      } catch {
+        throw fail(`Cannot delete '${name}' because it is not fully merged.`, 409);
+      }
+    } else {
+      throw fail('Unsupported branch operation.');
+    }
+    return branchSnapshot({ login, workspaceId: id });
+  }
+
+  return { open, snapshot, branchSnapshot, branchOperation };
 }

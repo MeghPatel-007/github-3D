@@ -11,6 +11,14 @@ export interface GitWorkspace {
   unstagedCount: number;
   sync: { ahead: number; behind: number };
   operation: 'idle' | 'cloning' | 'fetching' | 'pulling' | 'pushing' | 'conflict';
+  branches?: GitBranch[];
+}
+
+export interface GitBranch {
+  name: string;
+  kind: 'local' | 'remote';
+  upstream: string | null;
+  current: boolean;
 }
 
 export async function openWorkspace(owner: string, repo: string, action: 'init' | 'open' | 'clone' = 'open'): Promise<GitWorkspace> {
@@ -33,3 +41,22 @@ export async function getWorkspace(workspaceId: string): Promise<GitWorkspace> {
   if (!value || !('id' in value) || typeof value.id !== 'string') throw new Error('Workspace response was invalid.');
   return value;
 }
+
+async function branchRequest(workspaceId: string, method: string, path: string, body?: object): Promise<GitWorkspace> {
+  const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/branches${path}`, {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const value = await response.json().catch(() => null) as { error?: { message?: string } } | GitWorkspace | null;
+  if (!response.ok) throw new Error(value && 'error' in value ? value.error?.message ?? 'Branch operation failed.' : 'Branch operation failed.');
+  if (!value || !('id' in value) || typeof value.id !== 'string' || !Array.isArray(value.branches)) throw new Error('Branch response was invalid.');
+  return value;
+}
+
+export const getBranches = (workspaceId: string) => branchRequest(workspaceId, 'GET', '');
+export const createBranch = (workspaceId: string, name: string, startPoint?: string) => branchRequest(workspaceId, 'POST', '', { operation: 'create', name, startPoint });
+export const checkoutBranch = (workspaceId: string, name: string) => branchRequest(workspaceId, 'POST', '', { operation: 'checkout', name });
+export const renameBranch = (workspaceId: string, name: string, newName: string) => branchRequest(workspaceId, 'PATCH', `/${encodeURIComponent(name)}`, { operation: 'rename', name, newName });
+export const deleteBranch = (workspaceId: string, name: string) => branchRequest(workspaceId, 'DELETE', `/${encodeURIComponent(name)}`, { operation: 'delete', name });

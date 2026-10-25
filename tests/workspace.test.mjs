@@ -75,3 +75,33 @@ test('cancellation reports unknown completion and leaves no partial clone', asyn
   const cancelled = async () => { const error = new Error('Git operation was cancelled.'); error.status = 499; throw error; };
   await assert.rejects(service(root, 'https://github.com/octocat/demo.git', cancelled).open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' }), { status: 499 });
 });
+
+test('lists branches and protects dirty checkout, current deletion, and unmerged deletion', async () => {
+  const { root, remote } = await remoteRepository();
+  const workspaceService = service(root, remote);
+  const workspace = await workspaceService.open({ login: 'octocat', owner: 'octocat', repo: 'demo', action: 'clone' });
+  const branches = await workspaceService.branchSnapshot({ login: 'octocat', workspaceId: workspace.id });
+  assert.equal(branches.branches.some((branch) => branch.name === 'main' && branch.current), true);
+  assert.equal(branches.branches.some((branch) => branch.name === 'origin/main' && branch.kind === 'remote'), true);
+
+  await workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'create', name: 'feature/test' });
+  await workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'rename', name: 'feature/test', newName: 'feature/renamed' });
+  const created = await workspaceService.branchSnapshot({ login: 'octocat', workspaceId: workspace.id });
+  assert.equal(created.branches.some((branch) => branch.name === 'feature/renamed' && branch.kind === 'local'), true);
+  const repoPath = join(root, 'workspaces', workspace.id, 'repository');
+  await exec('git', ['switch', 'feature/renamed'], { cwd: repoPath });
+  await writeFile(join(repoPath, 'README.md'), 'feature change\n');
+  await exec('git', ['add', 'README.md'], { cwd: repoPath });
+  await exec('git', ['commit', '-m', 'feature base'], { cwd: repoPath });
+  await exec('git', ['switch', 'main'], { cwd: repoPath });
+  await writeFile(join(repoPath, 'README.md'), 'local change\n');
+  await assert.rejects(workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'checkout', name: 'feature/renamed' }), { status: 409 });
+  await exec('git', ['restore', 'README.md'], { cwd: repoPath });
+  await assert.rejects(workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'delete', name: 'main' }), { status: 409 });
+
+  await exec('git', ['switch', 'feature/renamed'], { cwd: repoPath });
+  await writeFile(join(repoPath, 'feature.txt'), 'unmerged\n');
+  await exec('git', ['add', 'feature.txt'], { cwd: repoPath });
+  await exec('git', ['commit', '-m', 'feature'], { cwd: repoPath });
+  await assert.rejects(workspaceService.branchOperation({ login: 'octocat', workspaceId: workspace.id, operation: 'delete', name: 'feature/renamed' }), { status: 409 });
+});

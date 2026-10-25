@@ -10,9 +10,9 @@
     "Branch state refreshes in the 2D controls and 3D workspace and is covered by focused tests."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Inspect Git-engine branch APIs", "details": "Use the architecture decision and existing state contracts." },
-    { "step": 2, "pass": false, "description": "Implement branch list and safe actions", "details": "Keep branch changes explicit and report verified results." },
-    { "step": 3, "pass": false, "description": "Verify branch safety and synchronization", "details": "Cover dirty working tree, current branch deletion, and operation failures." }
+    { "step": 1, "pass": true, "description": "Inspect Git-engine branch APIs", "details": "Use the architecture decision and existing state contracts." },
+    { "step": 2, "pass": true, "description": "Implement branch list and safe actions", "details": "Keep branch changes explicit and report verified results." },
+    { "step": 3, "pass": true, "description": "Verify branch safety and synchronization", "details": "Cover dirty working tree, current branch deletion, and operation failures." }
   ],
   "dependencies": ["TASK-5"],
   "estimatedComplexity": "medium",

@@ -2,6 +2,7 @@ import { buildRepoModel, tinyTsFixture, type RepoFixture } from './repo-model.js
 import { importPublicRepository, parseGitHubRepositoryUrl, RepositoryApiError } from './repository-api.js';
 import { AuthApiError, beginGitHubSignIn, getAuthConfig, getSession, listRepositories, signOut as signOutFromApp, type AccessibleRepository } from './auth-api.js';
 import { openWorkspace } from './workspace-api.js';
+import { mountBranchUi } from './branch-ui.js';
 
 export function mountRepositoryUi(): void {
   const root = document.querySelector<HTMLElement>('#app-root');
@@ -253,6 +254,7 @@ export function mountRepositoryUi(): void {
     try {
       const workspace = await openWorkspace(repository.owner, repository.name, action);
       setStatus(`${workspace.repository.owner}/${workspace.repository.name} · ${workspace.currentBranch} · ${workspace.workingTree} · HEAD ${workspace.headSha ?? 'unborn'}`);
+      mountBranchUi(root, workspace);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Workspace operation failed.', true);
     } finally {
