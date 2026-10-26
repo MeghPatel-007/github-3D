@@ -20,6 +20,8 @@ import {
 import { RepoKind, RepoNode } from './components.js';
 import { buildRepoModel, tinyTsFixture, type RepoFixture, type RepoModel } from './repo-model.js';
 import { fetchRepositoryFile, RepositoryApiError } from './repository-api.js';
+import { getWorkspaceChanges, mutateWorkspaceChanges, type WorkspaceChange } from './change-api.js';
+import { recoverWorkspaceConflict, synchronizeWorkspace, type GitWorkspace } from './workspace-api.js';
 
 // Directory groups sit on a ring around the hub; the player origin stays clear.
 const CENTER = { x: 0, y: 0, z: -7 };
@@ -55,7 +57,13 @@ export class RepoExplorerSystem extends createSystem({
   private contentRequest = 0;
   private contentController: AbortController | null = null;
   private workspaceBranch: string | null = null;
+  private workspaceHeadSha: string | null = null;
+  private workspaceActive = false;
   private workspaceStatus: string | null = null;
+  private workspaceId: string | null = null;
+  private workspaceChanges: WorkspaceChange[] = [];
+  private pendingSpatialAction: string | null = null;
+  private pendingSpatialActionAt = 0;
 
   private onRepositoryLoad = (event: Event): void => {
     this.replaceRepository((event as CustomEvent<RepoFixture>).detail);
@@ -83,10 +91,14 @@ export class RepoExplorerSystem extends createSystem({
     window.addEventListener('repo:load', this.onRepositoryLoad);
     window.addEventListener('repo:select', this.onRepositorySelect);
     const onBranchState = (event: Event) => {
-      const state = (event as CustomEvent<{ currentBranch?: string; workingTree?: string; stagedCount?: number; unstagedCount?: number }>).detail;
+      const state = (event as CustomEvent<GitWorkspace>).detail;
+      this.workspaceActive = true;
+      this.workspaceId = state.id;
       this.workspaceBranch = state.currentBranch ?? null;
+      this.workspaceHeadSha = state.headSha ?? null;
       this.workspaceStatus = state.workingTree ? `${state.workingTree} · ${state.stagedCount ?? 0} staged · ${state.unstagedCount ?? 0} unstaged` : null;
       this.refreshPanelRows();
+      this.refreshSpatialChanges();
     };
     window.addEventListener('workspace:branch-state', onBranchState);
     this.cleanupFuncs.push(
@@ -229,6 +241,24 @@ export class RepoExplorerSystem extends createSystem({
     this.inspectorDependencies = panel.getElementById('insp-deps')!;
     this.inspectorEmpty = panel.getElementById('insp-empty')!;
 
+    const bindAction = (id: string, action: () => void): void => {
+      const element = panel.getElementById(id);
+      if (!element) return;
+      element.name = id;
+      element.addEventListener('click', action);
+      this.cleanupFuncs.push(() => element.removeEventListener('click', action));
+    };
+    bindAction('action-fetch', () => this.runSpatialSync('fetch'));
+    bindAction('action-pull', () => this.runSpatialSync('pull'));
+    bindAction('action-push', () => this.runSpatialSync('push'));
+    bindAction('action-branch', () => window.dispatchEvent(new Event('workspace:branch-request')));
+    bindAction('action-stage', () => this.runSpatialChange('stage'));
+    bindAction('action-unstage', () => this.runSpatialChange('unstage'));
+    bindAction('action-discard', () => this.runSpatialChange('discard'));
+    bindAction('action-conflict-abort', () => this.runSpatialConflict('abort'));
+    bindAction('action-conflict-continue', () => this.runSpatialConflict('continue'));
+    bindAction('action-commit', () => window.dispatchEvent(new Event('workspace:commit-request')));
+
     for (let index = 0; ; index += 1) {
       const element = panel.getElementById(`item-${index}`);
       if (!element) break;
@@ -283,7 +313,100 @@ export class RepoExplorerSystem extends createSystem({
           ? 'No detected imports for this selection.'
           : 'Import analysis is not available for live repositories yet.',
     });
+    this.refreshSpatialSelection(path);
     window.dispatchEvent(new CustomEvent('repo:selected', { detail: path }));
+  }
+
+  private async refreshSpatialChanges(): Promise<void> {
+    if (!this.workspaceId) return;
+    try {
+      this.workspaceChanges = (await getWorkspaceChanges(this.workspaceId)).changes;
+      this.refreshSpatialSelection(this.selectedPath);
+    } catch {
+      this.workspaceChanges = [];
+    }
+  }
+
+  private refreshSpatialSelection(path: string | null): void {
+    const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
+    const change = path == null ? undefined : this.workspaceChanges.find((item) => item.path === path);
+    panel?.getElementById('git-selection')?.setProperties({ text: change ? `${change.kind} · ${change.staged ? 'staged' : 'unstaged'}` : 'No working-tree change selected.' });
+    for (const id of ['action-stage', 'action-unstage', 'action-discard', 'action-commit']) {
+      panel?.getElementById(id)?.setProperties({ display: this.workspaceActive ? 'flex' : 'none' });
+    }
+    panel?.getElementById('action-stage')?.setProperties({ disabled: !change?.unstaged });
+    panel?.getElementById('action-unstage')?.setProperties({ disabled: !change?.staged });
+    panel?.getElementById('action-discard')?.setProperties({ disabled: !change });
+    panel?.getElementById('action-commit')?.setProperties({ disabled: !this.workspaceChanges.some((item) => item.staged) });
+  }
+
+  private async runSpatialSync(operation: 'fetch' | 'pull' | 'push'): Promise<void> {
+    if (!this.workspaceId) return;
+    if (operation !== 'fetch' && !this.confirmSpatialAction(operation)) return;
+    this.setSpatialStatus(`${operation} in progress...`);
+    try {
+      const state = await synchronizeWorkspace(this.workspaceId, operation);
+      window.dispatchEvent(new CustomEvent('workspace:branch-state', { detail: state }));
+      this.setSpatialStatus(`${operation} complete · ${state.sync.ahead} ahead · ${state.sync.behind} behind`);
+    } catch (error) {
+      this.setSpatialStatus(error instanceof Error ? error.message : `${operation} failed.`);
+    }
+  }
+
+  private async runSpatialChange(operation: 'stage' | 'unstage' | 'discard'): Promise<void> {
+    if (!this.workspaceId || !this.selectedPath) return;
+    const change = this.workspaceChanges.find((item) => item.path === this.selectedPath);
+    if (!change || (operation === 'stage' && !change.unstaged) || (operation === 'unstage' && !change.staged)) return;
+    if (operation === 'discard' && !this.confirmSpatialAction(`discard ${this.selectedPath}`)) return;
+    this.setSpatialStatus(`${operation} ${this.selectedPath}...`);
+    try {
+      this.workspaceChanges = (await mutateWorkspaceChanges(this.workspaceId, operation, [this.selectedPath], operation === 'discard' ? [this.selectedPath] : undefined)).changes;
+      this.refreshSpatialSelection(this.selectedPath);
+      this.setSpatialStatus(`${operation} complete.`);
+      await this.refreshSpatialState();
+    } catch (error) {
+      this.setSpatialStatus(error instanceof Error ? error.message : 'Git change operation failed.');
+    }
+  }
+
+  private async runSpatialConflict(operation: 'abort' | 'continue'): Promise<void> {
+    if (!this.workspaceId) return;
+    try {
+      await recoverWorkspaceConflict(this.workspaceId, operation);
+      await this.refreshSpatialState();
+      this.setSpatialStatus(`Merge ${operation} complete.`);
+    } catch (error) {
+      this.setSpatialStatus(error instanceof Error ? error.message : 'Conflict recovery failed.');
+    }
+  }
+
+  private async refreshSpatialState(): Promise<void> {
+    if (!this.workspaceId) return;
+    await this.refreshSpatialChanges();
+    try {
+      const response = await fetch(`/api/v1/workspaces/${encodeURIComponent(this.workspaceId)}`, { credentials: 'same-origin', cache: 'no-store' });
+      if (!response.ok) return;
+      const state = await response.json() as GitWorkspace;
+      window.dispatchEvent(new CustomEvent('workspace:branch-state', { detail: state }));
+    } catch {
+      // Keep the last confirmed state visible when refresh is unavailable.
+    }
+  }
+
+  private setSpatialStatus(text: string): void {
+    this.world.getSceneObject<UIKitMLAsset>('repo-panel')?.getElementById('git-status')?.setProperties({ text });
+  }
+
+  private confirmSpatialAction(action: string): boolean {
+    const now = Date.now();
+    if (this.pendingSpatialAction !== action || now - this.pendingSpatialActionAt > 5000) {
+      this.pendingSpatialAction = action;
+      this.pendingSpatialActionAt = now;
+      this.setSpatialStatus(`Confirm ${action}: press the same action again.`);
+      return false;
+    }
+    this.pendingSpatialAction = null;
+    return true;
   }
 
   private replaceRepository(fixture: RepoFixture): void {
@@ -309,7 +432,10 @@ export class RepoExplorerSystem extends createSystem({
       });
     });
     const panel = this.world.getSceneObject<UIKitMLAsset>('repo-panel');
-    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${this.workspaceBranch ?? this.model.ref ?? this.model.defaultBranch} @ ${this.model.commitSha.slice(0, 7)}${this.workspaceStatus ? ` · ${this.workspaceStatus}` : ''}` });
+    const branch = this.workspaceBranch ?? this.model.ref ?? this.model.defaultBranch;
+    const revision = this.workspaceActive ? this.workspaceHeadSha?.slice(0, 7) ?? 'unborn' : this.model.commitSha.slice(0, 7);
+    panel?.getElementById('title')?.setProperties({ text: `${this.model.owner}/${this.model.name} · ${branch} @ ${revision}${this.workspaceStatus ? ` · ${this.workspaceStatus}` : ''}` });
+    panel?.getElementById('git-status')?.setProperties({ text: this.workspaceActive ? `${this.workspaceStatus ?? 'clean'} · ${this.workspaceId ? 'managed workspace' : 'workspace unavailable'}` : 'Demo workspace. Open a managed workspace for Git actions.' });
   }
 
   private loadSource(path: string, commitSha: string): void {

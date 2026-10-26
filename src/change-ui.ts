@@ -16,6 +16,11 @@ export function mountChangeReview(root: HTMLElement, workspaceId: string): void 
   const commitButton = commitForm.querySelector<HTMLButtonElement>('button')!;
   const conflictControls = panel.querySelector<HTMLElement>('.conflict-controls')!;
   const conflictPaths = panel.querySelector<HTMLElement>('.conflict-paths')!;
+  const onSpatialCommitRequest = () => {
+    commitMessage.focus();
+    summary.textContent = 'Enter a commit message and author, then confirm in the 2D form.';
+  };
+  window.addEventListener('workspace:commit-request', onSpatialCommitRequest);
   const refreshConflicts = async () => {
     const result = await getWorkspaceConflicts(workspaceId);
     conflictControls.hidden = result.conflict.operation === 'none';

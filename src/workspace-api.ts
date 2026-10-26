@@ -1,3 +1,5 @@
+import type { WorkspaceChange } from './change-api.js';
+
 export interface GitWorkspace {
   id: string;
   repository: { owner: string; name: string };
@@ -87,7 +89,7 @@ export const compareWorkspaceRevisions = (workspaceId: string, from: string, to:
 
 export interface WorkspaceCommitResult extends GitWorkspace {
   commit: { sha: string; message: string; authorName: string; authorEmail: string };
-  changes: Array<{ path: string; kind: string; staged: boolean; unstaged: boolean }>;
+  changes: WorkspaceChange[];
 }
 
 export async function commitWorkspace(workspaceId: string, message: string, authorName: string, authorEmail: string): Promise<WorkspaceCommitResult> {

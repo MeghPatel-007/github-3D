@@ -121,3 +121,24 @@
 - Connected confirmed workspace branch, working-tree, staged, and unstaged state to the existing IWSDK repository panel.
 - Added keyboard-accessible 2D conflict recovery controls with explicit abort/continue confirmation.
 - Partial verification only: source changes were inspected, but `bun run typecheck` failed because `tsc` is unavailable and `bun run build` failed because `vite` is unavailable. IWSDK runtime and screenshot evidence could not run.
+
+### Verification follow-up — 2026-10-26
+
+- Fixed the commit response change-kind type to reuse `WorkspaceChange`; excluded stale Playwright/Vitest config files from the app TypeScript project because their packages are not configured dependencies. `tsc --noEmit -p tsconfig.json` passes.
+- Production Vite build passes to a writable temporary output directory. The default `dist/` output is outside the sandbox's writable paths; the bundle reports a chunk-size warning.
+- Git/API suite: 31 passed, 0 failed, 2 platform-specific skips. Repository model/API TypeScript suite: 6 passed, 0 failed.
+- Captured `artifacts/task-14-final.png` from the managed browser. It shows the demo fixture, not an authenticated managed workspace or an interactive acceptance run.
+- TASK-14 and TASK-15 remain incomplete: cross-view user input, WebGL fallback, representative performance, live auth, and full browser workflow evidence are not established. The release evidence matrix and README now state these limits.
+
+### TASK-14 runtime follow-up — 2026-10-26
+
+- Added UIKitML/runtime controls for branch handoff, fetch/pull/push, file stage/unstage/discard, commit-flow handoff, and merge recovery. Pull, push, and discard require a second in-world activation within five seconds.
+- `bunx tsc --noEmit -p tsconfig.json` passed; focused Git/API/model suite passed (36 tests); temporary-output Vite build passed with a pre-existing large-chunk warning.
+- Managed IWSDK startup reached Vite, but Chromium installation stalled at the Playwright download and runtime CLI ownership queries timed out. No spatial input or runtime screenshot claim is recorded.
+
+## TASK-15 — Verify the complete supported desktop-style workflow
+
+- Added an FR-GIT-01 through FR-GIT-13 evidence matrix in `docs/09-testing-and-acceptance.md`; updated README and architecture/security/agent guidance to reflect implemented workflows and current limitations.
+- Local verification: 31 JavaScript tests passed with 2 platform-specific skips; 6 TypeScript tests passed; `tsc --noEmit -p tsconfig.json` passed; Vite production build passed to a temporary writable output directory.
+- The managed-browser screenshot confirms the demo scene loads. It does not prove live GitHub auth, a managed-workspace interaction sequence, keyboard-only completion, WebGL fallback, or representative performance.
+- TASK-15 remains incomplete; steps 1 and 3 are documented as complete, while step 2 and release acceptance remain open pending runtime evidence.

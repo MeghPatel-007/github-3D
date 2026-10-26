@@ -7,6 +7,11 @@ export function mountBranchUi(root: HTMLElement, workspace: GitWorkspace): void 
   root.querySelector('.repo-toolbar')?.append(panel);
   const picker = panel.querySelector<HTMLSelectElement>('#branch-picker')!;
   const status = panel.querySelector<HTMLElement>('.branch-status')!;
+  const onSpatialBranchRequest = () => {
+    picker.focus();
+    status.textContent = 'Choose a branch in the keyboard-accessible branch control.';
+  };
+  window.addEventListener('workspace:branch-request', onSpatialBranchRequest);
 
   const render = (next: GitWorkspace) => {
     picker.replaceChildren();
