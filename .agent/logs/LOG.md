@@ -233,3 +233,10 @@
 - Automated focused coverage passed (36 tests), `bun run typecheck` passed, and the temporary-output production build passed.
 - Managed runtime evidence covers the demo scene and one spatial control press only. No authenticated workspace, full browser workflow, keyboard-only completion, WebGL-failure runtime, representative-density, or performance evidence was available.
 - TASK-15 step 2 remains false because TASK-14 step 3 remains false. Runtime was stopped.
+
+### TASK-14/TASK-15 verification attempt - 2026-10-26 (current session)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed with 34 tests after using `bun test --timeout 30000`; and the temporary-output Vite build passed with existing dependency and chunk-size warnings.
+- Managed runtime launched successfully. `ui assets --raw` registered `repo-panel`; named spatial targets exposed Git controls; and an emulated hand press on `action-branch` completed with sub-800 ms contact on retry.
+- Runtime browser snapshot confirmed the app URL and unauthenticated demo fixture. Clicking `Continue with GitHub` navigated to `chrome-error://chromewebdata/` because managed browser policy blocked `https://github.com/login` with `net::ERR_BLOCKED_BY_RESPONSE`.
+- No authenticated workspace, cross-view synchronization, keyboard-only completion, WebGL-failure behavior, representative-density, or performance evidence was gathered. TASK-14 step 3 and TASK-15 step 2 remain false. Runtime was stopped.
