@@ -240,3 +240,9 @@
 - Managed runtime launched successfully. `ui assets --raw` registered `repo-panel`; named spatial targets exposed Git controls; and an emulated hand press on `action-branch` completed with sub-800 ms contact on retry.
 - Runtime browser snapshot confirmed the app URL and unauthenticated demo fixture. Clicking `Continue with GitHub` navigated to `chrome-error://chromewebdata/` because managed browser policy blocked `https://github.com/login` with `net::ERR_BLOCKED_BY_RESPONSE`.
 - No authenticated workspace, cross-view synchronization, keyboard-only completion, WebGL-failure behavior, representative-density, or performance evidence was gathered. TASK-14 step 3 and TASK-15 step 2 remain false. Runtime was stopped.
+
+### TASK-14 verification attempt - 2026-10-26 (current session)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed with 36 tests; and `bun run build -- --outDir .tmp/task-14-15-dist` passed with existing Rollup annotation and large-chunk warnings.
+- Managed IWSDK runtime rendered `Repository Panel`, exposed named spatial controls, accepted an XR session, and confirmed 2D keyboard search plus file selection for `src/math.ts`. A rendering profile recorded 645 frames, p95 13.9 ms, and 2 dropped frames, but it was an uncalibrated host-browser diagnostic.
+- The app remained unauthenticated. No managed workspace could be opened, so actual-workspace synchronization and WebGL-failure runtime evidence remain unavailable. Screenshot saved at `artifacts/task-14-runtime-current.png`. TASK-14 step 3 remains false.
