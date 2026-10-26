@@ -246,3 +246,9 @@
 - `bun run typecheck` passed; focused Git/API/model coverage passed with 36 tests; and `bun run build -- --outDir .tmp/task-14-15-dist` passed with existing Rollup annotation and large-chunk warnings.
 - Managed IWSDK runtime rendered `Repository Panel`, exposed named spatial controls, accepted an XR session, and confirmed 2D keyboard search plus file selection for `src/math.ts`. A rendering profile recorded 645 frames, p95 13.9 ms, and 2 dropped frames, but it was an uncalibrated host-browser diagnostic.
 - The app remained unauthenticated. No managed workspace could be opened, so actual-workspace synchronization and WebGL-failure runtime evidence remain unavailable. Screenshot saved at `artifacts/task-14-runtime-current.png`. TASK-14 step 3 remains false.
+
+### TASK-15 verification attempt - 2026-10-26 (current session)
+
+- Focused Git/API/model coverage passed with 36 tests, `bun run typecheck` passed, and the temporary-output production build passed with existing Rollup annotation and large-chunk warnings.
+- Managed runtime evidence confirmed the demo scene, spatial Git control targets, 2D keyboard search, and selection of `src/math.ts`. The host-browser rendering profile recorded 645 frames, p95 13.9 ms, and 2 dropped frames, but it was uncalibrated.
+- Live GitHub auth and managed workspace workflow were unavailable. WebGL-failure runtime, representative-density, calibrated performance, and full workflow evidence remain unverified. Screenshot saved at `artifacts/task-15-2d-current.png`. TASK-15 step 2 remains false.
