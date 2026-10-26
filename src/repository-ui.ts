@@ -176,6 +176,10 @@ export function mountRepositoryUi(): void {
     submit.disabled = false;
     setStatus('Offline demo ready.');
   }, { once: true });
+  window.addEventListener('repo:system-failed', () => {
+    submit.disabled = false;
+    setStatus('3D view unavailable. 2D controls remain available.', true);
+  }, { once: true });
   window.addEventListener('repo:selected', (event) => {
     selectedPath = (event as CustomEvent<string>).detail;
     list.querySelectorAll<HTMLButtonElement>('button[data-path]').forEach((button) => {

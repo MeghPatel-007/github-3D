@@ -213,3 +213,17 @@
 - Managed runtime launched with the local API already running. Browser snapshot exposed semantic 2D controls; keyboard search and Enter selection completed successfully.
 - XR session accepted, named spatial targets exposed branch, sync, staging, commit, conflict, tree, and inspector controls, and an emulated hand press reached `action-branch` with slow-frame warnings.
 - The browser remained on the unauthenticated demo fixture. Actual-workspace synchronization, WebGL-failure behavior, representative-density, and performance evidence remain unverified. TASK-14 step 3 and TASK-15 step 2 remain false.
+
+### TASK-14/TASK-15 verification attempt - 2026-10-26 (current session)
+
+- `bun run typecheck` passed; the temporary-output Vite production build passed with existing Rollup annotation and large-chunk warnings.
+- Focused Bun coverage reached 35 passed and 1 timeout in the branch-management test; the Node test harness reached 37 passed, 0 failed, and 2 platform-specific skips before command timeout.
+- Managed IWSDK startup launched once and rendered the app screenshot, but XR entry had no ready app endpoint and reported that no session was offered despite `world.xr.offer` being `always`; a second startup remained editor-only before shutdown.
+- The app had no authenticated session, so actual-workspace synchronization, keyboard-only completion, WebGL fallback, representative-density, performance, and live auth evidence remain unavailable. TASK-14 step 3 and TASK-15 step 2 remain false.
+
+### TASK-14 verification attempt - 2026-10-26 (current session)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed (36 tests); and the temporary-output Vite build passed with the existing large-chunk warning.
+- Managed IWSDK runtime launched after restart, `ui inspect` confirmed `#git-status`, and named spatial targets exposed branch, sync, staging, commit, conflict, tree, and inspector controls. An emulated hand press reached `action-branch` after a slow-frame retry.
+- Added `repo:system-failed` handling so the 2D repository controls remain enabled when `World.create` rejects.
+- The runtime disconnected during the final restart capture. No authenticated managed workspace was available; actual-workspace synchronization, keyboard-only completion, WebGL-failure runtime, representative-density, and performance evidence remain unverified. TASK-14 step 3 remains false.

@@ -18,4 +18,6 @@ World.create(
 ).then((world) => {
   world.registerSystem(RepoExplorerSystem);
   window.dispatchEvent(new Event('repo:system-ready'));
+}).catch(() => {
+  window.dispatchEvent(new Event('repo:system-failed'));
 });
