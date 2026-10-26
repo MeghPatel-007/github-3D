@@ -58,7 +58,7 @@ flowchart TD
 
 The approved model is a **server-managed Git workspace**. The backend creates one isolated workspace per user and repository, and a workspace worker runs a pinned native Git engine against that workspace. The worker is reachable only through typed, authorization-checked backend operations. Workspace metadata, Git objects, the index, and the working tree are durable server-side data; the browser receives status, diffs, and operation results, not a filesystem handle.
 
-This is the first release boundary for clone, branch, diff, stage, commit, fetch, pull, push, and conflict recovery. GitHub remains the remote source of truth, while the workspace is the source of truth for local changes until they are pushed. The renderer and 3D scene remain presentation layers over this state.
+This is the approved architecture for clone, branch, diff, stage, commit, fetch, pull, push, and conflict recovery. GitHub remains the remote source of truth, while the workspace is the source of truth for local changes until they are pushed. The renderer and 3D scene remain presentation layers over this state. Current implementation gaps and verification limits are tracked in `docs/09-testing-and-acceptance.md`.
 
 Stage, unstage, and discard currently operate on whole files only. Hunk-level changes are not exposed until the Git engine has a reliable patch-splitting implementation. Discard requires explicit confirmation of the exact changed paths and never runs without path-scoped Git arguments.
 
@@ -90,7 +90,7 @@ Owns GitHub API calls, revision selection, tree retrieval, normalization, and co
 
 ### Git workspace domain
 
-Owns opening/cloning repositories, the Git object database, branch and index state, diffs, commits, remotes, synchronization, and conflict recovery. Its execution and storage location is an architectural decision that must be recorded before implementing writes. Keep credentials outside the WebXR renderer and expose typed, validated operations to the UI.
+Owns opening/cloning repositories, the Git object database, branch and index state, diffs, commits, remotes, synchronization, and conflict recovery. Decision D-013 selects server-managed workspaces for this execution and storage boundary. Keep credentials outside the WebXR renderer and expose typed, validated operations to the UI.
 
 ### Analysis domain
 Detects imports and resolves relationships for supported language/configuration combinations.
@@ -102,7 +102,7 @@ Owns spatial layout, geometry, labels, camera controls, selection, focus, and ed
 Owns file metadata, source loading, syntax highlighting, dependency list, and source navigation.
 
 ### History domain
-Retrieves commits and changes, builds revision-specific models, and computes structural differences. Basic history and revision comparison are part of the complete desktop-style target; they can follow the initial Git workflow milestone.
+Retrieves commits and changes, builds revision-specific models, and computes structural differences. Basic history and revision comparison are implemented; release acceptance remains subject to the evidence matrix in `docs/09-testing-and-acceptance.md`.
 
 ## 5. Data flow
 

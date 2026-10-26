@@ -5,10 +5,11 @@ This is the project skill index for agents working on GitHub 3D. Skills are reus
 ## How to use this index
 
 1. Read the root [`AGENTS.md`](../AGENTS.md), this index, and the spec documents related to the task. Read any nested instructions governing files you will change.
-2. For any request that builds, extends, fixes, tunes, or polishes the IWSDK app, start with **`iwsdk-dev`**. It routes the work to exactly one internal planning or iteration playbook. Follow that route before selecting a specialist.
-3. Load only the specialist skill whose scope matches the requested change or verification. Its procedure takes precedence over this summary.
-4. Combine skills only where the work crosses their boundaries; follow the combinations below.
-5. Report the evidence actually gathered. Do not claim runtime, XR, or headset behavior based only on source inspection or an editor preview.
+2. Carry the user's requested outcome through all of its necessary steps and subtasks. Do not stop after completing only the first item when more requested work remains; stop once the full request is complete or a real blocker requires the user's input.
+3. For any request that builds, extends, fixes, tunes, or polishes the IWSDK app, start with **`iwsdk-dev`**. It routes the work to exactly one internal planning or iteration playbook. Follow that route before selecting a specialist.
+4. Load only the specialist skill whose scope matches the requested change or verification. Its procedure takes precedence over this summary.
+5. Combine skills only where the work crosses their boundaries; follow the combinations below.
+6. Report the evidence actually gathered. Do not claim runtime, XR, or headset behavior based only on source inspection or an editor preview.
 
 The project has 12 distinct skill workflows, each available under both [`.agents/skills/`](../.agents/skills/) and [`.claude/skills/`](../.claude/skills/). The two folders contain harness-specific copies of the same named skills, not 24 separate workflows. Consult the relevant copy's references when its instructions route you there.
 
@@ -57,7 +58,7 @@ There is no project-specific authentication or Better Auth skill. For login, sig
 - [`09-testing-and-acceptance.md`](09-testing-and-acceptance.md)
 - [`10-decisions-and-open-questions.md`](10-decisions-and-open-questions.md)
 
-The product target is a fully working GitHub Desktop-style client with a 3D-first workspace; the current read-only explorer is an early milestone. Preserve the documented trust boundaries: secrets and privileged tokens remain outside the renderer, sessions use secure cookies, protected repository requests verify access, and permissions are granted incrementally for the feature being implemented. Read-only access is sufficient for browsing; any future local/remote write workflow requires a documented Git-engine architecture and explicit least-privilege review. Handle logout, expiry, revocation, denial, conflicts, and insufficient permissions. Inspect the actual IWSDK/Vite app and deployment structure before choosing where auth or Git services run.
+The product target is a fully working GitHub Desktop-style client with a 3D-first workspace. The current implementation includes server-managed Git workspaces, branch changes, file-level staging and commits, remote sync, merge conflict recovery, history comparison, and pull-request context; the release evidence matrix lists what remains unverified or unsupported. Preserve the documented trust boundaries: secrets and privileged tokens stay outside the renderer, sessions use secure cookies, protected repository requests verify access, and permissions are granted incrementally. The Git workspace architecture is recorded in D-013. Handle logout, expiry, revocation, denial, conflicts, and insufficient permissions. Inspect the actual IWSDK/Vite app and deployment structure before changing auth or Git services.
 
 ## Project-wide reminders
 

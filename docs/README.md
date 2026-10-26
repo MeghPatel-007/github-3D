@@ -38,6 +38,7 @@ The target is a fully working, GitHub Desktop-style Git client with a 3D-first r
 | `17-accessibility-responsive-and-motion.md` | Keyboard access, 2D alternatives, responsive layout, reduced motion |
 | [`design/design.md`](design/design.md) | Primary GitHub 3D journey, immersive workspace composition, visual language, and accessibility guidance |
 | `25-implementation-task-breakdown.md` | Full GitHub Desktop-style capability roadmap and release gates |
+| `26-spatial-git-workflows.md` | Ralph handoff for connecting managed Git operations to the world-space IWSDK panel |
 
 ## Specification rules
 

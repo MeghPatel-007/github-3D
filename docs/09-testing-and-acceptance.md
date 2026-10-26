@@ -114,3 +114,31 @@ The initial 30+ FPS target for around 500 visible objects is a benchmark target,
 ## 5. Release gate
 
 Do not call the MVP complete if authentication exposes credentials, the model mixes revisions, source inspection is unreliable, search focuses the wrong object, dependency edges are fabricated, or the app becomes unusable when WebGL fails.
+
+## 6. Current release evidence
+
+Snapshot from 2026-10-26. “Automated” means local fixture/API tests; it does not
+mean a live GitHub account or browser workflow was exercised.
+
+| Requirement | Evidence gathered | Status and remaining gap |
+|---|---|---|
+| FR-GIT-01 — Open/clone workspace | Git-backed tests cover init/open, clone, failure cleanup, and cancellation. | Automated local fixtures pass; a live authorized GitHub clone and browser progress path were not exercised. |
+| FR-GIT-02 — Repository, branch, HEAD, sync state | Workspace snapshot and branch APIs expose these values; branch UI dispatches confirmed state to the scene header. | API/source evidence passes; live managed-workspace display remains unverified. |
+| FR-GIT-03 — Branch management | Tests cover create/list/switch/rename/delete constraints, dirty checkout, checked-out deletion, and unmerged branches. | Automated local fixtures pass. |
+| FR-GIT-04 — Change status | Tests cover untracked, added, modified, renamed, deleted and staged/unstaged states. | Automated local fixtures pass; 3D objects do not yet show per-file Git status. |
+| FR-GIT-05 — Diff safety | Tests cover staged/unstaged diffs and binary handling; code bounds and marks truncated/unsupported output. | File diffs pass; hunk diff is unsupported. |
+| FR-GIT-06 — Stage/unstage/discard | Tests cover file-level stage/unstage and explicit discard confirmation. | Automated local fixtures pass; hunk staging is unsupported. |
+| FR-GIT-07 — Commit | Tests cover staged-only commits, invalid identity, empty index, and hook failure. | Automated local fixtures pass. |
+| FR-GIT-08 — Remote sync | Tests cover fetch, fast-forward pull, push, denial, divergence, and confirmed result state. | Automated local fixtures pass; pull is fast-forward-only and live remote auth was not exercised. |
+| FR-GIT-09 — Conflicts | Tests cover merge conflict inspection and explicit abort/continue without overwriting files. | Automated local fixtures pass; rebase recovery is unsupported. |
+| FR-GIT-10 — History/comparison | Tests cover bounded history and revision path comparison without mutating workspace state. | Automated local fixtures pass. |
+| FR-GIT-11 — GitHub context/PR | API tests cover repository/branch/commit links and pull-request validation/context. | Automated mocked/local coverage passes; live PR creation was not exercised. |
+| FR-GIT-12 — Synchronized views | Shared selection events and a workspace branch/HEAD/status summary are present; screenshot shows the demo scene. | Partial. Git operation controls currently live in the DOM overlay, not the spatial UIKitML panel. Managed-workspace interactions and per-file 3D status are not verified. Follow `docs/26-spatial-git-workflows.md`. |
+| FR-GIT-13 — Keyboard/2D/WebGL fallback | Semantic HTML controls and focus styles are present. | Partial/unverified. No keyboard-only workflow or WebGL-failure run was performed. |
+| Security and accessibility | Auth/session, access denial, mutation safety, and token boundary tests pass; reduced-motion CSS is present. | Source and automated evidence only; no live auth review, keyboard audit, or permission revocation browser path was exercised in this session. |
+| Performance | Scene node count is capped at 500. | Unverified. The cap is not a measured FPS/memory result; no representative workspace benchmark was run. |
+| Build and automated tests | App TypeScript check passes; production Vite build passes to a writable temporary output directory; 31 JavaScript tests and 6 TypeScript tests pass (2 platform-specific tests skipped). | Checks pass with caveats: default `dist/` output is blocked by the sandbox; build warns about a large chunk; full browser E2E and live auth are not verified. |
+
+The release gate remains open until the partial and unverified items above have
+appropriate runtime evidence. Do not mark TASK-14 or TASK-15 complete based on
+fixture rendering, source inspection, or server tests alone.

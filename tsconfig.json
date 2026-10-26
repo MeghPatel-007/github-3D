@@ -11,5 +11,6 @@
     "skipLibCheck": true,
     "types": ["@iwsdk/vite-plugin-dev/client"]
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/playwright.config.ts", "src/vitest.config.ts"]
 }

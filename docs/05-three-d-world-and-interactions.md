@@ -30,6 +30,12 @@ On narrow screens, prioritize file tree, inspector, and basic scene exploration 
 - Dependency edge: directed connection between source and target files.
 - Directory containment: visually distinct from dependency edges.
 
+Use open wireframe directory containers and compact file blocks to make this
+hierarchy visible. Thin blue wires represent resolved dependencies only; do not
+reuse dependency styling for folder containment. The visual concept and color
+tokens are specified in [`26-spatial-git-workflows.md`](26-spatial-git-workflows.md)
+and [`design/design.md`](design/design.md).
+
 The layout algorithm must be deterministic for the same revision and settings. Do not randomly rearrange the entire world on every render.
 
 ## 4. Layout constraints
@@ -64,6 +70,19 @@ Selection must be synchronized across:
 - dependency highlighting
 
 Selecting a file in one view should select the same file in the others.
+
+## 5.1 Spatial Git workspace controls
+
+When a managed Git workspace is open, branch, HEAD, working-tree, and sync
+state must be visible in the world-space UIKitML workspace UI. Supported branch,
+sync, change-review, staging, commit, and conflict actions must have spatial
+interaction paths that call the same typed workspace APIs as the 2D controls.
+The DOM controls remain the keyboard-accessible fallback; they are not a
+replacement for the spatial workflow. Keep the two surfaces synchronized after
+each confirmed operation, and use an explicit in-world confirmation for
+operations that change local or remote state. See
+[`26-spatial-git-workflows.md`](26-spatial-git-workflows.md) for Ralph's TASK-14
+handoff.
 
 ## 6. Object interactions
 

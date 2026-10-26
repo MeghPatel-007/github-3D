@@ -33,7 +33,9 @@ Signs a file needs splitting:
 
 ## Task Execution
 
-- **One task per invocation.** When working from `.agent/tasks.json`, complete exactly one task, commit, and stop. Never batch multiple tasks.
+- **Complete the user's full requested outcome.** Work through every required step and subtask before stopping; do not stop after the first item in a multi-part request.
+- When the user asks to finish the indexed work in `.agent/tasks.json`, process every incomplete task in dependency order, updating each task's status and log only after its acceptance criteria pass. Stop after all requested tasks are complete, or when a genuine blocker or required user decision prevents further progress.
+- Keep changes for separate indexed tasks isolated and verifiable. Do not claim the overall request is complete while requested tasks remain unfinished.
 
 ## Code Style
 

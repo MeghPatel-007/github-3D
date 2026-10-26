@@ -9,8 +9,11 @@ GitHub 3D is a GitHub Desktop-style client with a 3D repository world as its pri
 ## Experience principles
 
 - **World first, controls close at hand.** Give the repository scene most of the screen. Keep search, navigation, status, and inspector controls in compact 2D panels that can be opened when needed.
+- **The 3D world is the main workspace.** After a managed workspace opens, show its branch, HEAD, working-tree and sync state in world-space UIKitML, with spatial paths to supported Git operations. Prioritize completing and verifying this experience in the XR simulation. Use shadcn/ui for the companion 2D browser interface and its keyboard-accessible controls; completion of the 2D interface does not count as completion of the 3D work.
 - **Git operations stay recognizable.** Branch, sync, staged/unstaged, commit, and conflict states must use clear developer-tool language. 3D can add spatial context, but should not obscure conventional diffs or Git concepts.
 - **Spatial structure should explain the repository.** Use folders as recognizable groups or districts and files as selectable objects. Keep hierarchy and names understandable; visual spectacle must not make browsing slower.
+- **Blue wires and directory containers form the world.** Use open wireframe directory containers for hierarchy, compact file blocks inside them, and thin blue wires (`#58A6FF`) for real resolved dependencies. Selection glows mint (`#9BF0D0`); conflicts use the established red accent (`#F78166`) plus a text label. Keep containment links distinct from dependency wires and never invent connections.
+- **Keep the UI toolkits on their intended surfaces.** Use shadcn/ui for 2D browser DOM controls. Build spatial controls and feedback with IWSDK/UIKitML and the existing runtime; do not treat DOM overlays as a replacement for in-world UI.
 - **Keep a precise 2D route.** Every core browse and inspect action must remain usable through a file tree, search results, and a source inspector. 3D is the primary way to explore, not a gate to repository information.
 - **Show only evidence-backed relationships.** Draw dependency edges only when analysis resolves them. Label unresolved or unsupported imports honestly and provide a legend.
 - **Preserve revision identity.** Show the selected repository and resolved commit SHA in the workspace. Do not visually mix information from different revisions.
@@ -39,8 +42,15 @@ Do not add a full dashboard step between login and the world unless a product de
 - Distinguish hover, selection, keyboard focus, and dependency highlighting. Do not communicate these states with color alone.
 - Provide camera focus and reset controls, plus a way to recover from disorientation.
 - Avoid continuous idle motion, camera shake, unnecessary particles, and large transitions. Motion should communicate focus, navigation, or loading.
+- Use a central repository hub, stable directory containers arranged around it, and compact file blocks within each container. Keep the scene sparse at overview scale; reveal names and connected blue dependency wires when the user focuses a directory or file. The detailed replication brief and sketch live in [`../26-spatial-git-workflows.md`](../26-spatial-git-workflows.md).
 
 ### 2D controls and panels
+
+Use shadcn/ui components for the 2D browser DOM interface where appropriate.
+Keep this layer connected to the same workspace state and typed APIs as the 3D
+world, and keep its scope focused on browser navigation, accessible Git
+controls, dialogs, and detailed inspection. It complements the spatial
+environment; it does not replace it.
 
 - **Workspace header:** repository owner/name, branch or requested ref, resolved commit SHA, and import/session status.
 - **Git status and actions:** active branch, ahead/behind state, staged/unstaged summary, fetch/pull/push status, commit action, and conflict state. Only show operations supported by the actual workspace.

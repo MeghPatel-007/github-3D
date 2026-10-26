@@ -35,7 +35,7 @@ Use PKCE where supported by the selected authorization flow. Follow current GitH
 
 ## 4. Permission strategy
 
-Use least privilege for the feature currently being used. Read access is sufficient for the initial repository-exploration milestone. The complete desktop-style target also includes local Git changes and remote writes, so adding commit/push or other write workflows requires an explicit permission review, a clear user authorization step, and server-side enforcement before those features ship. Do not request write permissions early just because they are on the roadmap.
+Use least privilege for the feature currently being used. Read access is sufficient for repository exploration, clone, fetch, and pull. Push requires repository `Contents: write`; pull-request creation requires `Pull requests: write`. Keep these permissions tied to the enabled GitHub App features, make authorization explicit, and enforce it server-side. Local branch, stage, discard, and commit operations are performed in the managed workspace and do not by themselves require GitHub write permission.
 
 The UI must clearly distinguish:
 - Public repository imported by URL.
@@ -43,7 +43,7 @@ The UI must clearly distinguish:
 - Repository inaccessible because of permissions or organization policy.
 - Authorization revoked or expired.
 
-Do not ask for write access until a shipped feature actually needs it. Read-only exploration is an early milestone; it is not the product's final scope. For every write-capable feature, document the exact GitHub App permission or OAuth scope, limit it to the required repositories and actions, and test denial/revocation behavior. Remote synchronization requires explicit GitHub App user authorization with repository `Contents: read and write`; fetch uses read access, while pull and push use the server-held credential only after the user activates that operation. Pull-request creation additionally requires `Pull requests: read and write` and is requested only when that feature is enabled.
+For every write-capable remote feature, document the exact GitHub App permission or OAuth scope, limit it to the required repositories and actions, and test denial/revocation behavior. Remote synchronization requires explicit GitHub App user authorization with repository `Contents: read and write` for push; fetch and pull use read access. The server uses the held credential only after the user activates the operation. Pull-request creation additionally requires `Pull requests: read and write` and is requested only when that feature is enabled.
 
 ## 5. Repository URL validation
 

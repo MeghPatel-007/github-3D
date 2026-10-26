@@ -1,8 +1,8 @@
 # Implementation Task Breakdown
 
-**Status:** Living roadmap; the current implementation is an early read-only explorer.  
+**Status:** Living roadmap; Git workflow implementation is present, while TASK-14 cross-view acceptance and TASK-15 release evidence remain open. See the [evidence matrix](09-testing-and-acceptance.md#6-current-release-evidence).  
 **Product target:** A fully working, GitHub Desktop-style Git client whose primary workspace is a navigable 3D repository world.  
-**Delivery rule:** Each Ralph invocation completes one indexed task, verifies it, commits it, and stops.
+**Delivery rule:** Complete all tasks requested for the current work session in dependency order. A task is an implementation slice, not an instruction to stop the session; continue through the remaining requested tasks and stop after the requested outcome is complete or a genuine blocker requires input. Verify and record each task separately.
 
 ## Product outcome
 
@@ -59,6 +59,7 @@ Exact implementation must follow an architecture decision for where Git executes
 
 - Make the repository world the main work surface, with spatial regions for directories and clear representations of branch/working-tree status.
 - Keep search, tree, status, diff, staging, commit, branch, sync, and conflict actions available through legible panels and keyboard controls.
+- Put the immersive Git workflow in world-space UIKitML, not only in the browser DOM overlay. Follow [`26-spatial-git-workflows.md`](26-spatial-git-workflows.md) for the TASK-14 implementation map and acceptance path.
 - Synchronize scene selection with all 2D navigation and inspection views.
 - Provide camera recovery, reduced motion, responsive layout, and a 2D fallback that supports all essential Git actions.
 
@@ -75,7 +76,7 @@ Exact implementation must follow an architecture decision for where Git executes
 
 ## Work order
 
-The Ralph task index follows this dependency order, one task per invocation:
+The task index follows this dependency order. When asked to complete the full roadmap, work through every incomplete task in order and continue across task boundaries:
 
 1. TASK-1 — Validate invalid repository import responses.
 2. TASK-2 — Choose and document the Git workspace architecture.
@@ -93,6 +94,6 @@ The Ralph task index follows this dependency order, one task per invocation:
 14. TASK-14 — Connect Git workflows to the 3D-first workspace.
 15. TASK-15 — Verify the complete supported desktop-style workflow.
 
-These are sequential slices toward the complete outcome, not claims that the listed functionality exists today. Split any task further if its verified implementation cannot reasonably fit one Ralph invocation.
+These are sequential slices toward the complete outcome, not claims that the listed functionality exists today. Split a task when doing so improves independent implementation and verification; task boundaries do not require ending a user-requested full-roadmap session.
 
-Task index order is priority order. Keep each task small enough for one Ralph invocation. A task is complete only when its own acceptance criteria and verification pass, its status/log are updated truthfully, and its Conventional Commit succeeds. No push or publish without explicit authorization.
+Task index order is priority order. Keep each task independently reviewable. A task is complete only when its own acceptance criteria and verification pass and its status/log are updated truthfully. Continue to the next requested task after closing out the current one. Use separate Conventional Commits when requested by the active workflow; no push or publish without explicit authorization. Stop only after all requested tasks are complete or progress is blocked by a real dependency, environment issue, or user decision.
