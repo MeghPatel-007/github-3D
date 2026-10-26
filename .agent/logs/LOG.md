@@ -192,3 +192,10 @@
 - `ecs find` located `Repository Panel` at entity 12; `ui inspect` confirmed `#git-status` rendered the demo-workspace state; an emulated hand press reached `action-branch` after entering XR and switching to hand input.
 - The runtime remained on the unauthenticated demo fixture. Local API startup confirmed auth configuration but no authenticated session; no managed workspace could be opened, so actual-workspace synchronization, keyboard-only fallback, WebGL-failure, representative-density, and performance evidence remain unverified.
 - Managed runtime and local API were stopped. TASK-14 step 3 and TASK-15 step 2 remain false; no release parity claim is made.
+
+### TASK-14/TASK-15 verification attempt - 2026-10-26 (current session)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed (36 tests); and `bun run build -- --outDir /tmp/github-3d-dist` passed with the existing large-chunk warning.
+- Managed IWSDK runtime launched with SwiftShader, rendered `Repository Panel`, exposed named spatial controls, and accepted an emulated hand press on `action-branch`; screenshot saved at `artifacts/task-14-runtime.png`.
+- The app remained unauthenticated and the API had no configured session, so no real managed workspace could be opened. Actual-workspace cross-view synchronization, keyboard-only fallback, WebGL-failure, representative-density, and performance evidence remain unverified.
+- Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures. Runtime and API processes were stopped after verification. TASK-14 step 3 and TASK-15 step 2 remain false.
