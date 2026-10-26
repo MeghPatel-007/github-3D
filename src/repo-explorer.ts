@@ -73,16 +73,21 @@ export class RepoExplorerSystem extends createSystem({
     this.selectPath((event as CustomEvent<string>).detail);
   };
 
-  // [0]=idle file, [1]=hover, [2]=idle dir, [3]=selected
-  private materialFor(kind: string, selected: boolean, hovered: boolean): MeshStandardMaterial {
+  // [0]=idle, [1]=hover, [2]=directory, [3]=selected, [4]=staged, [5]=unstaged
+  /** Resolve a file's visual state from the last confirmed workspace snapshot. */
+  private materialForNode(path: string, kind: string, selected: boolean, hovered: boolean): MeshStandardMaterial {
     if (selected) return this.materials[3];
     if (hovered) return this.materials[1];
-    return this.materials[kind === RepoKind.Directory ? 2 : 0];
+    if (kind === RepoKind.Directory) return this.materials[2];
+    const change = this.workspaceChanges.find((item) => item.path === path);
+    if (change?.staged) return this.materials[4];
+    if (change?.unstaged) return this.materials[5];
+    return this.materials[0];
   }
 
   init(): void {
     this.model = buildRepoModel(tinyTsFixture);
-    this.materials = [0x388bfd, 0x9bccff, 0x2ea043, 0xf78166].map(
+    this.materials = [0x388bfd, 0x9bccff, 0x2ea043, 0xf78166, 0xffd33d, 0xff9b6a].map(
       (color) => new MeshStandardMaterial({ color }),
     );
     this.buildWorld();
@@ -123,7 +128,8 @@ export class RepoExplorerSystem extends createSystem({
     for (const entity of this.queries.nodes.entities) {
       const object = entity.object3D as Mesh | undefined;
       if (!object) continue;
-      const target = this.materialFor(
+      const target = this.materialForNode(
+        entity.getValue(RepoNode, 'path') ?? '',
         entity.getValue(RepoNode, 'kind') ?? 'File',
         entity === selectedEntity,
         entity.hasComponent(Hovered),

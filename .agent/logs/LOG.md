@@ -142,3 +142,10 @@
 - Local verification: 31 JavaScript tests passed with 2 platform-specific skips; 6 TypeScript tests passed; `tsc --noEmit -p tsconfig.json` passed; Vite production build passed to a temporary writable output directory.
 - The managed-browser screenshot confirms the demo scene loads. It does not prove live GitHub auth, a managed-workspace interaction sequence, keyboard-only completion, WebGL fallback, or representative performance.
 - TASK-15 remains incomplete; steps 1 and 3 are documented as complete, while step 2 and release acceptance remain open pending runtime evidence.
+
+### TASK-14 verification attempt — 2026-10-26
+
+- Mapped confirmed staged and unstaged workspace changes onto matching 3D file nodes, and added an in-world text legend so state is not color-only.
+- Updated Bun scripts to resolve local `vite` and `tsc` executables through `bunx --no-install`.
+- `bunx --no-install tsc --noEmit -p tsconfig.json` passed; focused Git/API/model suite passed (36 tests); temporary-output Vite build passed.
+- Managed IWSDK server started, but Chromium could not launch because `libglib-2.0.so.0` is unavailable. No spatial input or runtime screenshot evidence was recorded. TASK-14 remains incomplete.

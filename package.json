@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "iwsdk dev restart --open --foreground",
-    "dev:runtime": "vite",
+    "dev:runtime": "bunx --no-install vite",
     "api": "node server/index.mjs",
     "dev:down": "iwsdk dev down",
     "dev:status": "iwsdk dev status",
     "reference:status": "iwsdk reference status",
     "reference:warmup": "iwsdk reference warmup",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bunx --no-install tsc --noEmit",
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "bunx --no-install vite build",
+    "preview": "bunx --no-install vite preview"
   },
   "dependencies": {
     "@iwsdk/core": "1.1.0-rc.2",

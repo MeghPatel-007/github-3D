@@ -12,7 +12,7 @@
   "steps": [
     { "step": 1, "pass": true, "description": "Map real Git state into the existing scene model", "details": "Confirmed workspace branch, working-tree, staged, and unstaged state now updates the existing repository panel title." },
     { "step": 2, "pass": true, "description": "Integrate navigation and operation affordances", "details": "Existing tree selection remains shared with 3D selection; 2D conflict recovery uses explicit confirmation and typed server operations." },
-    { "step": 3, "pass": false, "description": "Verify cross-view consistency and accessibility", "details": "Added UIKitML/runtime Git status, branch handoff, sync, change, commit, and conflict controls with shared typed APIs and confirmation states. Managed runtime verification is blocked because IWSDK cannot install Chromium in this sandbox; WebGL-failure, keyboard-only, representative-density, and performance evidence remain unavailable." }
+    { "step": 3, "pass": false, "description": "Verify cross-view consistency and accessibility", "details": "Added UIKitML/runtime Git status, branch handoff, sync, change, commit, conflict controls, and per-file staged/unstaged visual state with shared typed APIs and confirmation states. Typecheck, focused tests, and production build pass. Managed browser verification is blocked by missing libglib-2.0.so.0; spatial input, runtime screenshots, WebGL-failure, keyboard-only, representative-density, and performance evidence remain unavailable." }
   ],
   "dependencies": ["TASK-6", "TASK-7", "TASK-8", "TASK-9", "TASK-10", "TASK-11", "TASK-12"],
   "estimatedComplexity": "high",
