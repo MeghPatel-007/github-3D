@@ -227,3 +227,9 @@
 - Managed IWSDK runtime launched after restart, `ui inspect` confirmed `#git-status`, and named spatial targets exposed branch, sync, staging, commit, conflict, tree, and inspector controls. An emulated hand press reached `action-branch` after a slow-frame retry.
 - Added `repo:system-failed` handling so the 2D repository controls remain enabled when `World.create` rejects.
 - The runtime disconnected during the final restart capture. No authenticated managed workspace was available; actual-workspace synchronization, keyboard-only completion, WebGL-failure runtime, representative-density, and performance evidence remain unverified. TASK-14 step 3 remains false.
+
+### TASK-15 verification attempt - 2026-10-26 (current session)
+
+- Automated focused coverage passed (36 tests), `bun run typecheck` passed, and the temporary-output production build passed.
+- Managed runtime evidence covers the demo scene and one spatial control press only. No authenticated workspace, full browser workflow, keyboard-only completion, WebGL-failure runtime, representative-density, or performance evidence was available.
+- TASK-15 step 2 remains false because TASK-14 step 3 remains false. Runtime was stopped.
