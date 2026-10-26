@@ -206,3 +206,10 @@
 - Managed runtime launched successfully. `ui assets --raw` registered `repo-panel`; `ecs find` located `Repository Panel` at entity 12; `xr list-targets` exposed branch, sync, staging, commit, conflict, tree, and inspector controls; and an emulated hand press reached `action-branch` after entering XR and selecting hand input. Runtime screenshot saved at `artifacts/task-14-runtime.png`.
 - The runtime remained on the unauthenticated demo fixture. No authenticated managed workspace could be opened, so actual-workspace cross-view synchronization, keyboard-only fallback, WebGL-failure, representative-density, and performance evidence remain unverified.
 - Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures. Runtime was stopped after verification. TASK-14 step 3 and TASK-15 step 2 remain false; no release parity claim is made.
+
+### TASK-14/TASK-15 verification attempt - 2026-10-26 (current session continuation)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed with 36 tests when using `bun test --timeout 30000`; and the temporary-output Vite build passed with the existing large-chunk warning.
+- Managed runtime launched with the local API already running. Browser snapshot exposed semantic 2D controls; keyboard search and Enter selection completed successfully.
+- XR session accepted, named spatial targets exposed branch, sync, staging, commit, conflict, tree, and inspector controls, and an emulated hand press reached `action-branch` with slow-frame warnings.
+- The browser remained on the unauthenticated demo fixture. Actual-workspace synchronization, WebGL-failure behavior, representative-density, and performance evidence remain unverified. TASK-14 step 3 and TASK-15 step 2 remain false.
