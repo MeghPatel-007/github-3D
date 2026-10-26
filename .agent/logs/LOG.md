@@ -178,3 +178,9 @@
 - Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures.
 - Managed Chromium launch failed before page load because `libglib-2.0.so.0` is unavailable. Live auth, browser E2E, WebGL fallback, keyboard-only completion, and representative performance remain unverified.
 - TASK-15 step 2 remains false; no release parity claim is made.
+
+### TASK-14/TASK-15 verification attempt — 2026-10-26 (current session)
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed (36 tests); `bun run build -- --outDir /tmp/github-3d-dist` passed with the existing large-chunk warning.
+- Managed runtime started and reached Vite, but Chromium exited before page load because `libatk-1.0.so.0` is unavailable. No spatial input, runtime screenshots, 2D keyboard fallback, WebGL-failure, representative-density, or performance evidence was gathered.
+- Runtime server was stopped. TASK-14 step 3 and TASK-15 step 2 remain false; no release parity claim is made.
