@@ -156,3 +156,11 @@
 - Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures.
 - Managed IWSDK startup reached the Vite server, but Chromium failed before page load because `libglib-2.0.so.0` is unavailable. Asset/runtime inspection, spatial input, runtime screenshots, keyboard-only fallback, WebGL-failure behavior, and representative performance evidence could not run.
 - Runtime server was stopped. TASK-14 and TASK-15 remain incomplete and require an environment with the missing browser library before their open acceptance gates can pass.
+
+### TASK-14/TASK-15 verification attempt — 2026-10-26 (current session)
+
+- `bun run typecheck` passed.
+- Focused Git/API/model coverage passed; `bun run build -- --outDir /tmp/github-3d-dist` passed with the existing large-chunk warning.
+- Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures.
+- Managed IWSDK startup reached Vite, but Chromium launch failed before page load because `libglib-2.0.so.0` is unavailable. No spatial input, runtime screenshot, 2D keyboard fallback, WebGL-failure, representative-density, or performance evidence was gathered.
+- Runtime server was stopped. TASK-14 step 3 and TASK-15 step 2 remain false.
