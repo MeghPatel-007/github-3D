@@ -149,3 +149,10 @@
 - Updated Bun scripts to resolve local `vite` and `tsc` executables through `bunx --no-install`.
 - `bunx --no-install tsc --noEmit -p tsconfig.json` passed; focused Git/API/model suite passed (36 tests); temporary-output Vite build passed.
 - Managed IWSDK server started, but Chromium could not launch because `libglib-2.0.so.0` is unavailable. No spatial input or runtime screenshot evidence was recorded. TASK-14 remains incomplete.
+
+### TASK-14/TASK-15 verification attempt — 2026-10-26
+
+- `bun run typecheck` passed; focused Git/API/model coverage passed with 36 tests; the temporary-output Vite production build passed with the existing large-chunk warning.
+- Aggregate `bun run test` ran 35 tests: 32 passed and 3 failed in the existing `ralph-capture` TDZ and Node TypeScript-loader harness failures.
+- Managed IWSDK startup reached the Vite server, but Chromium failed before page load because `libglib-2.0.so.0` is unavailable. Asset/runtime inspection, spatial input, runtime screenshots, keyboard-only fallback, WebGL-failure behavior, and representative performance evidence could not run.
+- Runtime server was stopped. TASK-14 and TASK-15 remain incomplete and require an environment with the missing browser library before their open acceptance gates can pass.

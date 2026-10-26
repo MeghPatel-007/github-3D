@@ -10,9 +10,9 @@
     "The product docs and README distinguish implemented capabilities from deferred or unsupported ones; no unsupported parity claim remains."
   ],
   "steps": [
-    { "step": 1, "pass": false, "description": "Build the workflow acceptance matrix", "details": "Map each FR-GIT requirement to implementation and evidence." },
-    { "step": 2, "pass": false, "description": "Run required automated and runtime checks", "details": "Follow project testing and IWSDK runtime procedures; do not fabricate evidence." },
-    { "step": 3, "pass": false, "description": "Document release status and remaining gaps", "details": "Update docs and product capability wording to match verified behavior." }
+    { "step": 1, "pass": true, "description": "Build the workflow acceptance matrix", "details": "Added the current evidence matrix to docs/09-testing-and-acceptance.md; it separates automated, runtime, and unverified claims." },
+    { "step": 2, "pass": false, "description": "Run required automated and runtime checks", "details": "36 focused Bun tests pass; aggregate bun run test has 32 passes and 3 pre-existing harness failures. App typecheck and a temporary-output production build pass. Managed Chromium cannot launch because libglib-2.0.so.0 is missing, so live auth, browser E2E, WebGL fallback, keyboard-only completion, and representative performance remain unverified." },
+    { "step": 3, "pass": true, "description": "Document release status and remaining gaps", "details": "Updated README and acceptance docs to distinguish implemented workflows from unsupported behavior and the open release gate." }
   ],
   "dependencies": ["TASK-3", "TASK-4", "TASK-5", "TASK-6", "TASK-7", "TASK-8", "TASK-9", "TASK-10", "TASK-11", "TASK-12", "TASK-13", "TASK-14"],
   "estimatedComplexity": "high",
